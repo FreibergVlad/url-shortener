@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package invitations.service.v1;
+
+import "google/api/annotations.proto";
+import "invitations/messages/v1/accept_invitation_request.proto";
+import "invitations/messages/v1/accept_invitation_response.proto";
+import "invitations/messages/v1/create_invitation_request.proto";
+import "invitations/messages/v1/create_invitation_response.proto";
+import "permissions/messages/v1/permissions.proto";
+
+option go_package = "service/v1";
+
+service InvitationService {
+  rpc CreateInvitation(invitations.messages.v1.CreateInvitationRequest) returns (invitations.messages.v1.CreateInvitationResponse) {
+    option (permissions.messages.v1.required_permissions) = "organization-invite:create";
+    option (google.api.http) = {
+      post: "/v1/organizations/{organization_id}/invites"
+      body: "*"
+    };
+  }
+  rpc AcceptInvitation(invitations.messages.v1.AcceptInvitationRequest) returns (invitations.messages.v1.AcceptInvitationResponse) {
+    option (google.api.http) = {
+      post: "/v1/organizations/invites/accept"
+      body: "*"
+    };
+  }
+}

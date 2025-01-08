@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package shorturls.management.service.v1;
+
+import "google/api/annotations.proto";
+import "permissions/messages/v1/permissions.proto";
+import "shorturls/management/messages/v1/delete_short_url_by_org_id_request.proto";
+import "shorturls/management/messages/v1/delete_short_url_by_org_id_response.proto";
+import "shorturls/management/messages/v1/get_short_url_by_org_id_request.proto";
+import "shorturls/management/messages/v1/get_short_url_by_org_id_response.proto";
+import "shorturls/management/messages/v1/get_short_url_request.proto";
+import "shorturls/management/messages/v1/get_short_url_response.proto";
+import "shorturls/management/messages/v1/list_short_url_by_org_id_request.proto";
+import "shorturls/management/messages/v1/list_short_url_by_org_id_response.proto";
+import "shorturls/management/messages/v1/update_short_url_by_org_id_request.proto";
+import "shorturls/management/messages/v1/update_short_url_by_org_id_response.proto";
+
+option go_package = "service/v1";
+
+service ShortURLManagementService {
+  rpc GetShortURL(shorturls.management.messages.v1.GetShortURLRequest) returns (shorturls.management.messages.v1.GetShortURLResponse) {
+    option (permissions.messages.v1.authentication_required) = {value: false};
+  }
+  rpc GetShortURLByOrganizationID(shorturls.management.messages.v1.GetShortURLByOrganizationIDRequest) returns (shorturls.management.messages.v1.GetShortURLByOrganizationIDResponse) {
+    option (permissions.messages.v1.required_permissions) = "short-url:read";
+    option (google.api.http) = {get: "/v1/short-urls/{organization_id}/{domain}/{alias}"};
+  }
+  rpc ListShortURLByOrganizationID(shorturls.management.messages.v1.ListShortURLByOrganizationIDRequest) returns (shorturls.management.messages.v1.ListShortURLByOrganizationIDResponse) {
+    option (permissions.messages.v1.required_permissions) = "short-url:list";
+    option (google.api.http) = {get: "/v1/short-urls/{organization_id}"};
+  }
+  rpc UpdateShortURLByOrganizationID(shorturls.management.messages.v1.UpdateShortURLByOrganizationIDRequest) returns (shorturls.management.messages.v1.UpdateShortURLByOrganizationIDResponse) {
+    option (permissions.messages.v1.required_permissions) = "short-url:update";
+  }
+  rpc DeleteShortURLByOrganizationID(shorturls.management.messages.v1.DeleteShortURLByOrganizationIDRequest) returns (shorturls.management.messages.v1.DeleteShortURLByOrganizationIDResponse) {
+    option (permissions.messages.v1.required_permissions) = "short-url:delete";
+    option (google.api.http) = {delete: "/v1/short-urls/{organization_id}/{domain}/{alias}"};
+  }
+}

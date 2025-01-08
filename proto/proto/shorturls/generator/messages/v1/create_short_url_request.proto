@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package shorturls.generator.messages.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "messages/v1";
+
+message CreateShortURLRequest {
+  string organization_id = 1 [(buf.validate.field).required = true];
+  string domain = 2 [(buf.validate.field).required = true];
+  string long_url = 3 [(buf.validate.field).required = true];
+
+  repeated string tags = 5 [
+    (buf.validate.field).repeated.unique = true,
+    (buf.validate.field).repeated.max_items = 20,
+    (buf.validate.field).repeated.items = {
+      string: {
+        min_len: 1
+        max_len: 50
+      }
+    }
+  ];
+  google.protobuf.Timestamp expires_at = 7 [(buf.validate.field).timestamp.gt_now = true];
+  google.protobuf.StringValue description = 8 [(buf.validate.field).string.max_len = 1000];
+}

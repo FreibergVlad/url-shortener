@@ -1,0 +1,12 @@
+version: '3'
+
+tasks:
+  run-all-tests:
+    cmds:
+      - docker-compose -f docker/docker-compose-integration-test.yml up --build --exit-code-from domain-service-test
+      - docker-compose -f docker/docker-compose-integration-test.yml rm -fsv
+    dir: '{{.TASKFILE_DIR}}'
+  run-unit-tests:
+    cmds:
+      - go test ./... -short
+    dir: '{{.TASKFILE_DIR}}'

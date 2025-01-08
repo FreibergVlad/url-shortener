@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package shorturls.management.messages.v1;
+
+import "shorturls/management/messages/v1/short_url.proto";
+
+option go_package = "messages/v1";
+
+message ListShortURLByOrganizationIDResponse {
+  repeated ShortURL data = 1;
+  int32 total = 2;
+}

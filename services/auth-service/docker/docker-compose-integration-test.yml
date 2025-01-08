@@ -1,0 +1,45 @@
+services:
+  auth-service-test:
+    build:
+      dockerfile: ./services/auth-service/docker/Dockerfile.integration-test
+      context: ../../../
+    container_name: auth-service-test
+    environment:
+      - PORT=8080
+      - LOG_LEVEL=info
+      - JWT_SECRET=fake-secret
+      - JWT_REFRESH_SECRET=fake-refresh-secret
+      - JWT_LIFETIME_SECONDS=300
+      - JWT_REFRESH_LIFETIME_SECONDS=86400
+      - REDIS_DSN=redis://:root@auth-service-test-redis-cache:6379/0
+      - MIGRATION_POSTGRES_DSN=pgx5://root:root@auth-service-test-postgres:5432/auth-service
+      - POSTGRES_DSN=postgresql://root:root@auth-service-test-postgres:5432/auth-service
+      - ADMIN_EMAIL=fake-admin@email.com
+      - ADMIN_PASSWORD=123
+    volumes:
+      - ./coverage:/coverage
+
+  auth-service-test-redis-cache:
+    image: redis:latest
+    container_name: auth-service-test-redis-cache
+    restart: always
+    ports:
+      - 6379:6379
+    environment:
+      - REDIS_PASSWORD=root
+      - REDIS_PORT=6379
+    tmpfs:
+      - /data
+
+  auth-service-test-postgres:
+    image: postgres:17.2
+    container_name: auth-service-test-postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=auth-service
+    ports:
+      - 5432:5432
+    tmpfs:
+      - /var/lib/postgresql/data

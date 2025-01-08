@@ -1,0 +1,13 @@
+services:
+  domain-service-test:
+    build:
+      dockerfile: ./services/domain-service/docker/Dockerfile.integration-test
+      context: ../../../
+    container_name: domain-service-test
+    environment:
+      - PORT=8080
+      - LOG_LEVEL=info
+      - AUTH_SERVICE_DSN=fake-dsn
+      - PUBLIC_DOMAINS=fake-domain-1,fake-domain-2
+    volumes:
+      - ./coverage:/coverage

@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package tokens.service.v1;
+
+import "google/api/annotations.proto";
+import "permissions/messages/v1/permissions.proto";
+import "tokens/messages/v1/issue_authentication_token_request.proto";
+import "tokens/messages/v1/issue_authentication_token_response.proto";
+import "tokens/messages/v1/refresh_authentication_token_request.proto";
+import "tokens/messages/v1/refresh_authentication_token_response.proto";
+
+option go_package = "service/v1";
+
+service TokenService {
+  rpc IssueAuthenticationToken(tokens.messages.v1.IssueAuthenticationTokenRequest) returns (tokens.messages.v1.IssueAuthenticationTokenResponse) {
+    option (permissions.messages.v1.authentication_required) = {value: false};
+    option (google.api.http) = {
+      post: "/v1/tokens/issue"
+      body: "*"
+    };
+  }
+  rpc RefreshAuthenticationToken(tokens.messages.v1.RefreshAuthenticationTokenRequest) returns (tokens.messages.v1.RefreshAuthenticationTokenResponse) {
+    option (permissions.messages.v1.authentication_required) = {value: false};
+    option (google.api.http) = {
+      post: "/v1/tokens/refresh"
+      body: "*"
+    };
+  }
+}

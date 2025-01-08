@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package permissions.messages.v1;
+
+import "google/protobuf/descriptor.proto";
+
+option go_package = "messages/v1";
+
+message OrganizationContext {
+  string organization_id = 1;
+}
+
+message HasPermissionsRequest {
+  repeated string scopes = 1;
+  OrganizationContext organization_context = 2;
+}

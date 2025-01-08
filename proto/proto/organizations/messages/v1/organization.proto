@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package organizations.messages.v1;
+
+import "google/protobuf/timestamp.proto";
+import "permissions/messages/v1/role.proto";
+
+option go_package = "messages/v1";
+
+message OrganizationMembership {
+  ShortOrganization organization = 1;
+  permissions.messages.v1.Role role = 2;
+  google.protobuf.Timestamp created_at = 3;
+}
+
+message ShortOrganization {
+  string id = 1;
+  string slug = 2;
+}
+
+message Organization {
+  string id = 1;
+  string name = 2;
+  string slug = 3;
+  google.protobuf.Timestamp created_at = 4;
+  string created_by = 5;
+}

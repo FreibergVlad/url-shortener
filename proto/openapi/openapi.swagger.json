@@ -1,0 +1,779 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "domains/messages/v1/domain.proto",
+    "version": "version not set"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/organizations": {
+      "post": {
+        "operationId": "CreateOrganization",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/CreateOrganizationResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CreateOrganizationRequest"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/organizations/invites/accept": {
+      "post": {
+        "operationId": "AcceptInvitation",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/AcceptInvitationResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/AcceptInvitationRequest"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/organizations/{organizationId}/domains": {
+      "get": {
+        "operationId": "ListOrganizationDomain",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ListOrganizationDomainResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ]
+      }
+    },
+    "/v1/organizations/{organizationId}/invites": {
+      "post": {
+        "operationId": "CreateInvitation",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/CreateInvitationResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CreateInvitationBody"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/short-urls": {
+      "post": {
+        "operationId": "CreateShortURL",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/CreateShortURLResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CreateShortURLRequest"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/short-urls/{organizationId}": {
+      "get": {
+        "operationId": "ListShortURLByOrganizationID",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ListShortURLByOrganizationIDResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "pageNum",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ]
+      }
+    },
+    "/v1/short-urls/{organizationId}/{domain}/{alias}": {
+      "get": {
+        "operationId": "GetShortURLByOrganizationID",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetShortURLByOrganizationIDResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "domain",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "alias",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "DeleteShortURLByOrganizationID",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/DeleteShortURLByOrganizationIDResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "domain",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "alias",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ]
+      }
+    },
+    "/v1/tokens/issue": {
+      "post": {
+        "operationId": "IssueAuthenticationToken",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/IssueAuthenticationTokenResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/IssueAuthenticationTokenRequest"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/tokens/refresh": {
+      "post": {
+        "operationId": "RefreshAuthenticationToken",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/RefreshAuthenticationTokenResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/RefreshAuthenticationTokenRequest"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/users": {
+      "post": {
+        "operationId": "CreateUser",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/CreateUserResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CreateUserRequest"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/users/me": {
+      "get": {
+        "operationId": "GetMe",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/GetMeResponse"
+            }
+          }
+        }
+      }
+    },
+    "/v1/users/me/organizations": {
+      "get": {
+        "operationId": "ListMeOrganizationMemberships",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/ListMeOrganizationMembershipsResponse"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "AcceptInvitationRequest": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      }
+    },
+    "AcceptInvitationResponse": {
+      "type": "object"
+    },
+    "CreateInvitationBody": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "roleId": {
+          "type": "string"
+        }
+      }
+    },
+    "CreateInvitationResponse": {
+      "type": "object",
+      "properties": {
+        "invitation": {
+          "$ref": "#/definitions/Invitation"
+        }
+      }
+    },
+    "CreateOrganizationRequest": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        }
+      }
+    },
+    "CreateOrganizationResponse": {
+      "type": "object",
+      "properties": {
+        "organization": {
+          "$ref": "#/definitions/Organization"
+        }
+      }
+    },
+    "CreateShortURLRequest": {
+      "type": "object",
+      "properties": {
+        "organizationId": {
+          "type": "string"
+        },
+        "domain": {
+          "type": "string"
+        },
+        "longUrl": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "CreateShortURLResponse": {
+      "type": "object",
+      "properties": {
+        "shortUrl": {
+          "$ref": "#/definitions/ShortURL"
+        }
+      }
+    },
+    "CreateUserRequest": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      }
+    },
+    "CreateUserResponse": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "$ref": "#/definitions/User"
+        }
+      }
+    },
+    "DeleteShortURLByOrganizationIDResponse": {
+      "type": "object"
+    },
+    "Domain": {
+      "type": "object",
+      "properties": {
+        "fqdn": {
+          "type": "string"
+        }
+      }
+    },
+    "GetMeResponse": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "$ref": "#/definitions/User"
+        }
+      }
+    },
+    "GetShortURLByOrganizationIDResponse": {
+      "type": "object",
+      "properties": {
+        "shortUrl": {
+          "$ref": "#/definitions/ShortURL"
+        }
+      }
+    },
+    "GetShortURLResponse": {
+      "type": "object",
+      "properties": {
+        "shortUrl": {
+          "$ref": "#/definitions/ShortURL"
+        }
+      }
+    },
+    "HasPermissionsResponse": {
+      "type": "object",
+      "properties": {
+        "hasPermissions": {
+          "type": "boolean"
+        }
+      }
+    },
+    "Invitation": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "organizationId": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/InvitationStatus"
+        },
+        "email": {
+          "type": "string"
+        },
+        "roleId": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "createdBy": {
+          "type": "string"
+        }
+      }
+    },
+    "InvitationStatus": {
+      "type": "string",
+      "enum": [
+        "INVITATION_STATUS_UNSPECIFIED",
+        "INVITATION_STATUS_ACTIVE",
+        "INVITATION_STATUS_REDEEMED",
+        "INVITATION_STATUS_EXPIRED"
+      ],
+      "default": "INVITATION_STATUS_UNSPECIFIED"
+    },
+    "IssueAuthenticationTokenRequest": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      }
+    },
+    "IssueAuthenticationTokenResponse": {
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string"
+        },
+        "refreshToken": {
+          "type": "string"
+        }
+      }
+    },
+    "ListMeOrganizationMembershipsResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/OrganizationMembership"
+          }
+        }
+      }
+    },
+    "ListOrganizationDomainResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/Domain"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "ListShortURLByOrganizationIDResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/ShortURL"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "LongURL": {
+      "type": "object",
+      "properties": {
+        "hash": {
+          "type": "string"
+        },
+        "assembled": {
+          "type": "string"
+        },
+        "scheme": {
+          "type": "string"
+        },
+        "host": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "query": {
+          "type": "string"
+        }
+      }
+    },
+    "Organization": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "createdBy": {
+          "type": "string"
+        }
+      }
+    },
+    "OrganizationContext": {
+      "type": "object",
+      "properties": {
+        "organizationId": {
+          "type": "string"
+        }
+      }
+    },
+    "OrganizationMembership": {
+      "type": "object",
+      "properties": {
+        "organization": {
+          "$ref": "#/definitions/ShortOrganization"
+        },
+        "role": {
+          "$ref": "#/definitions/Role"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "RefreshAuthenticationTokenRequest": {
+      "type": "object",
+      "properties": {
+        "refreshToken": {
+          "type": "string"
+        }
+      }
+    },
+    "RefreshAuthenticationTokenResponse": {
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string"
+        }
+      }
+    },
+    "Role": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "ShortOrganization": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        }
+      }
+    },
+    "ShortURL": {
+      "type": "object",
+      "properties": {
+        "organizationId": {
+          "type": "string"
+        },
+        "longUrl": {
+          "$ref": "#/definitions/LongURL"
+        },
+        "shortUrl": {
+          "type": "string"
+        },
+        "domain": {
+          "type": "string"
+        },
+        "alias": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/ShortURLStatus"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "deletedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "createdBy": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "ShortURLStatus": {
+      "type": "string",
+      "enum": [
+        "SHORT_URL_STATUS_UNSPECIFIED",
+        "SHORT_URL_STATUS_ACTIVE",
+        "SHORT_URL_STATUS_DELETED"
+      ],
+      "default": "SHORT_URL_STATUS_UNSPECIFIED"
+    },
+    "UpdateShortURLByOrganizationIDResponse": {
+      "type": "object",
+      "properties": {
+        "shortUrl": {
+          "$ref": "#/definitions/ShortURL"
+        }
+      }
+    },
+    "User": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "firstName": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "role": {
+          "$ref": "#/definitions/Role"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

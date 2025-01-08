@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package users.service.v1;
+
+import "google/api/annotations.proto";
+import "permissions/messages/v1/permissions.proto";
+import "users/messages/v1/create_user_request.proto";
+import "users/messages/v1/create_user_response.proto";
+import "users/messages/v1/get_me_request.proto";
+import "users/messages/v1/get_me_response.proto";
+
+option go_package = "service/v1";
+
+service UserService {
+  rpc CreateUser(users.messages.v1.CreateUserRequest) returns (users.messages.v1.CreateUserResponse) {
+    option (permissions.messages.v1.authentication_required) = {value: false};
+    option (google.api.http) = {
+      post: "/v1/users"
+      body: "*"
+    };
+  }
+  rpc GetMe(users.messages.v1.GetMeRequest) returns (users.messages.v1.GetMeResponse) {
+    option (permissions.messages.v1.required_permissions) = "me:read";
+    option (google.api.http) = {get: "/v1/users/me"};
+  }
+}

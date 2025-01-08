@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package permissions.service.v1;
+
+import "permissions/messages/v1/has_permissions_request.proto";
+import "permissions/messages/v1/has_permissions_response.proto";
+
+option go_package = "service/v1";
+
+service PermissionService {
+  rpc HasPermissions(permissions.messages.v1.HasPermissionsRequest) returns (permissions.messages.v1.HasPermissionsResponse);
+}

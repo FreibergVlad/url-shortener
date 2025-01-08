@@ -1,0 +1,13 @@
+# syntax=docker/dockerfile:1
+FROM golang:1.23.2-alpine
+
+WORKDIR /build/services/domain-service
+
+COPY shared/go ../../shared/go
+COPY proto ../../proto
+COPY services/domain-service/go.mod services/domain-service/go.sum ./
+RUN go mod download
+
+COPY services/domain-service ./
+
+ENTRYPOINT ["go", "test", "-coverpkg=./...", "-coverprofile=/coverage/coverage.out", "./..."]

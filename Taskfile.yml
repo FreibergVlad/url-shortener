@@ -1,0 +1,16 @@
+version: '3'
+
+includes:
+  domain-service: ./services/domain-service
+  auth-service: ./services/auth-service
+  proto: ./proto
+
+tasks:
+  run-all-tests:
+    cmds:
+      - task domain-service:run-all-tests
+      - task auth-service:run-all-tests
+  run-unit-tests:
+    cmds:
+      - task domain-service:run-unit-tests
+      - task auth-service:run-unit-tests

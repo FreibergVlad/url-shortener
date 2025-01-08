@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package shorturls.generator.service.v1;
+
+import "google/api/annotations.proto";
+import "permissions/messages/v1/permissions.proto";
+import "shorturls/generator/messages/v1/create_short_url_request.proto";
+import "shorturls/generator/messages/v1/create_short_url_response.proto";
+
+option go_package = "service/v1";
+
+service ShortURLGeneratorService {
+  rpc CreateShortURL(shorturls.generator.messages.v1.CreateShortURLRequest) returns (shorturls.generator.messages.v1.CreateShortURLResponse) {
+    option (permissions.messages.v1.required_permissions) = "short-url:create";
+    option (google.api.http) = {
+      post: "/v1/short-urls"
+      body: "*"
+    };
+  }
+}

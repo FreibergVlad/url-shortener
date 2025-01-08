@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package organizations.messages.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "messages/v1";
+
+message CreateOrganizationRequest {
+  string name = 1 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string.min_len = 2,
+    (buf.validate.field).string.max_len = 50
+  ];
+  string slug = 2 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string.min_len = 2,
+    (buf.validate.field).string.max_len = 50,
+    (buf.validate.field).cel = {
+      id: "slug_format"
+      message: "'slug' can contain URL allowed characters only"
+      expression: "this.matches('^[a-z0-9]+(?:-[a-z0-9]+)*$')"
+    }
+  ];
+}

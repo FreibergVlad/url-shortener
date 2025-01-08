@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package shorturls.management.messages.v1;
+
+option go_package = "messages/v1";
+
+message DeleteShortURLByOrganizationIDResponse {}

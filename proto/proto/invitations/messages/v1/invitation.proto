@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package invitations.messages.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "messages/v1";
+
+enum InvitationStatus {
+  INVITATION_STATUS_UNSPECIFIED = 0;
+  INVITATION_STATUS_ACTIVE = 1;
+  INVITATION_STATUS_REDEEMED = 2;
+  INVITATION_STATUS_EXPIRED = 3;
+}
+
+message Invitation {
+  string id = 1;
+  string organization_id = 2;
+  InvitationStatus status = 3;
+  string email = 4;
+  string role_id = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp expires_at = 7;
+  string created_by = 8;
+}

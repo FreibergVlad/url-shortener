@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package domains.messages.v1;
+
+import "domains/messages/v1/domain.proto";
+
+option go_package = "messages/v1";
+
+message ListOrganizationDomainResponse {
+  repeated Domain data = 1;
+  int32 total = 2;
+}

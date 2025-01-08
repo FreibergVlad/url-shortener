@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package domains.service.v1;
+
+import "domains/messages/v1/list_organization_domain_request.proto";
+import "domains/messages/v1/list_organization_domain_response.proto";
+import "google/api/annotations.proto";
+import "permissions/messages/v1/permissions.proto";
+
+option go_package = "service/v1";
+
+service DomainService {
+  rpc ListOrganizationDomain(domains.messages.v1.ListOrganizationDomainRequest) returns (domains.messages.v1.ListOrganizationDomainResponse) {
+    option (permissions.messages.v1.required_permissions) = "domain:list";
+    option (google.api.http) = {get: "/v1/organizations/{organization_id}/domains"};
+  }
+}

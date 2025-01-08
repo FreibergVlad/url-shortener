@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package organizations.messages.v1;
+
+import "organizations/messages/v1/organization.proto";
+
+option go_package = "messages/v1";
+
+message CreateOrganizationResponse {
+  Organization organization = 1;
+}

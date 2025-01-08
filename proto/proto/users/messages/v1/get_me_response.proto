@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package users.messages.v1;
+
+import "users/messages/v1/user.proto";
+
+message GetMeResponse {
+  User user = 1;
+}

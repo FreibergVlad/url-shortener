@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package permissions.messages.v1;
+
+import "google/protobuf/descriptor.proto";
+
+option go_package = "messages/v1";
+
+message HasPermissionsResponse {
+  bool has_permissions = 1;
+}

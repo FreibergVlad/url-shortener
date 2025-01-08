@@ -1,0 +1,14 @@
+[
+    {
+      "dropIndexes": "short_urls",
+      "index": "unique_domain_alias"
+    },
+    {
+      "dropIndexes": "short_urls",
+      "index": "unique_organization_id_domain_long_url_hash"
+    },
+    {
+      "dropIndexes": "short_urls",
+      "index": "organization_id_status"
+    }
+]

@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package shorturls.management.messages.v1;
+
+import "shorturls/management/messages/v1/short_url.proto";
+
+option go_package = "messages/v1";
+
+message UpdateShortURLByOrganizationIDResponse {
+  ShortURL short_url = 1;
+}

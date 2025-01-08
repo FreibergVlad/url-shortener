@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package invitations.messages.v1;
+
+import "invitations/messages/v1/invitation.proto";
+
+option go_package = "messages/v1";
+
+message CreateInvitationResponse {
+  Invitation invitation = 1;
+}

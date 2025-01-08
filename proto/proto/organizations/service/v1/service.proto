@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package organizations.service.v1;
+
+import "google/api/annotations.proto";
+import "organizations/messages/v1/create_organization_request.proto";
+import "organizations/messages/v1/create_organization_response.proto";
+import "organizations/messages/v1/list_me_organization_memberships_request.proto";
+import "organizations/messages/v1/list_me_organization_memberships_response.proto";
+import "permissions/messages/v1/permissions.proto";
+
+option go_package = "service/v1";
+
+service OrganizationService {
+  rpc CreateOrganization(organizations.messages.v1.CreateOrganizationRequest) returns (organizations.messages.v1.CreateOrganizationResponse) {
+    option (permissions.messages.v1.required_permissions) = "organization:create";
+    option (google.api.http) = {
+      post: "/v1/organizations"
+      body: "*"
+    };
+  }
+  rpc ListMeOrganizationMemberships(organizations.messages.v1.ListMeOrganizationMembershipsRequest) returns (organizations.messages.v1.ListMeOrganizationMembershipsResponse) {
+    option (permissions.messages.v1.required_permissions) = "organization-membership:list";
+    option (google.api.http) = {get: "/v1/users/me/organizations"};
+  }
+}

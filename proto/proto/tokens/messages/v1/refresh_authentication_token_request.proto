@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package tokens.messages.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "messages/v1";
+
+message RefreshAuthenticationTokenRequest {
+  string refresh_token = 1 [(buf.validate.field).required = true];
+}

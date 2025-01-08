@@ -1,0 +1,34 @@
+[
+    {
+        "createIndexes": "short_urls",
+        "indexes": [
+            {
+                "key": {
+                    "domain": 1,
+                    "alias": 1
+                },
+                "name": "unique_domain_alias",
+                "unique": true,
+                "background": true
+            },
+            {
+                "key": {
+                  "organization_id": 1,
+                  "domain": 1,
+                  "long_url.hash": 1
+                },
+                "name": "unique_organization_id_domain_long_url_hash",
+                "unique": true,
+                "background": true
+            },
+            {
+                "key": {
+                  "organization_id": 1,
+                  "status": 1
+                },
+                "name": "organization_id_status",
+                "background": true
+            }
+        ]
+    }
+]

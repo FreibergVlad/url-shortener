@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package shorturls.management.messages.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "messages/v1";
+
+message GetShortURLRequest {
+  string domain = 1 [(buf.validate.field).required = true];
+  string alias = 2 [(buf.validate.field).required = true];
+}

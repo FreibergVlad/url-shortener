@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package domains.messages.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "messages/v1";
+
+message ListOrganizationDomainRequest {
+  string organization_id = 1 [(buf.validate.field).required = true];
+}

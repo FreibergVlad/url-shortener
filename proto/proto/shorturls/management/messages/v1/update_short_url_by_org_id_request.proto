@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package shorturls.management.messages.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "messages/v1";
+
+message UpdateShortURLByOrganizationIDRequest {
+  string organization_id = 2 [(buf.validate.field).required = true];
+  string domain = 1 [(buf.validate.field).required = true];
+  string alias = 3 [(buf.validate.field).required = true];
+
+  google.protobuf.StringValue description = 4 [(buf.validate.field).string.max_len = 1000];
+  google.protobuf.Timestamp expires_at = 5 [(buf.validate.field).timestamp.gt_now = true];
+  repeated string tags = 6 [
+    (buf.validate.field).repeated.unique = true,
+    (buf.validate.field).repeated.max_items = 20,
+    (buf.validate.field).repeated.items = {
+      string: {
+        min_len: 1
+        max_len: 50
+      }
+    }
+  ];
+
+  google.protobuf.FieldMask update_mask = 8 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).cel = {
+      id: "valid_update_mask"
+      message: "a field mask path must contain only valid fields"
+      expression: "this.paths.all(path, path in ['description', 'expires_at', 'tags'])"
+    }
+  ];
+}

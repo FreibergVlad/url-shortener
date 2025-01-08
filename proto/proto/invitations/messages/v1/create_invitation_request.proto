@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package invitations.messages.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "messages/v1";
+
+message CreateInvitationRequest {
+  string organization_id = 1 [(buf.validate.field).required = true];
+  string email = 2 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).cel = {
+      id: "valid_email"
+      message: "'email' must be a valid email address"
+      expression: "this.isEmail()"
+    }
+  ];
+  string role_id = 3 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string = {
+      in: [
+        "admin",
+        "member"
+      ]
+    }
+  ];
+}

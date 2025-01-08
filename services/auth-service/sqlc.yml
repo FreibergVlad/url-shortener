@@ -1,0 +1,35 @@
+version: "2"
+sql:
+  - engine: "postgresql"
+    queries:
+      - "internal/db/repositories/users/queries.sql"
+    schema: "internal/db/migrations/versions/"
+    gen:
+      go:
+        package: "gen"
+        out: "internal/db/repositories/users/gen"
+        sql_package: "pgx/v5"
+        emit_empty_slices: true
+        omit_unused_structs: true
+  - engine: "postgresql"
+    queries:
+      - "internal/db/repositories/organizations/queries.sql"
+    schema: "internal/db/migrations/versions/"
+    gen:
+      go:
+        package: "gen"
+        out: "internal/db/repositories/organizations/gen"
+        sql_package: "pgx/v5"
+        emit_empty_slices: true
+        omit_unused_structs: true
+  - engine: "postgresql"
+    queries:
+      - "internal/db/repositories/invitations/queries.sql"
+    schema: "internal/db/migrations/versions/"
+    gen:
+      go:
+        package: "gen"
+        out: "internal/db/repositories/invitations/gen"
+        sql_package: "pgx/v5"
+        emit_empty_slices: true
+        omit_unused_structs: true

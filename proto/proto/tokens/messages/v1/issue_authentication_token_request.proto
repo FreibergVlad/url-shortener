@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package tokens.messages.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "messages/v1";
+
+message IssueAuthenticationTokenRequest {
+  string email = 1 [(buf.validate.field).required = true];
+  string password = 2 [(buf.validate.field).required = true];
+}

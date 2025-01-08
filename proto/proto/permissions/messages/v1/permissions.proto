@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package permissions.messages.v1;
+
+import "google/protobuf/descriptor.proto";
+import "google/protobuf/wrappers.proto";
+
+option go_package = "messages/v1";
+
+extend google.protobuf.MethodOptions {
+  google.protobuf.BoolValue authentication_required = 50001;
+  repeated string required_permissions = 50002;
+}

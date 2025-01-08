@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package permissions.messages.v1;
+
+option go_package = "messages/v1";
+
+message Role {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+}
