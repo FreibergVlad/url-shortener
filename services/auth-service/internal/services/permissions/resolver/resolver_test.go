@@ -10,7 +10,7 @@ import (
 	testUtils "github.com/FreibergVlad/url-shortener/auth-service/internal/testing"
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/errors"
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestHasPermissionsWhenErrorGettingUser(t *testing.T) {
@@ -19,14 +19,14 @@ func TestHasPermissionsWhenErrorGettingUser(t *testing.T) {
 	userRepo := &testUtils.MockedUserRepository{}
 	organizationRepo := &testUtils.MockedOrganizationRepository{}
 	resolver := resolver.New(userRepo, organizationRepo)
-	ctx, userId := context.Background(), gofakeit.UUID()
+	ctx, userID := context.Background(), gofakeit.UUID()
 
-	userRepo.On("GetById", ctx, userId).Return(&schema.User{}, errors.ErrResourceNotFound)
+	userRepo.On("GetByID", ctx, userID).Return(&schema.User{}, errors.ErrResourceNotFound)
 
-	hasPermissons, err := resolver.HasPermissions(ctx, []string{}, userId, nil)
+	hasPermissons, err := resolver.HasPermissions(ctx, []string{}, userID, nil)
 
-	assert.False(t, hasPermissons)
-	assert.ErrorIs(t, err, errors.ErrResourceNotFound)
+	require.False(t, hasPermissons)
+	require.ErrorIs(t, err, errors.ErrResourceNotFound)
 
 	userRepo.AssertExpectations(t)
 	organizationRepo.AssertExpectations(t)
@@ -38,16 +38,18 @@ func TestHasPermissionsWhenErrorGettingOrganizationMemberships(t *testing.T) {
 	userRepo := &testUtils.MockedUserRepository{}
 	organizationRepo := &testUtils.MockedOrganizationRepository{}
 	resolver := resolver.New(userRepo, organizationRepo)
-	ctx, organizationId := context.Background(), gofakeit.UUID()
-	user := &schema.User{ID: gofakeit.UUID(), RoleID: roles.RoleIdProvisional}
+	ctx, organizationID := context.Background(), gofakeit.UUID()
+	user := &schema.User{ID: gofakeit.UUID(), RoleID: roles.RoleIDProvisional}
 
-	userRepo.On("GetById", ctx, user.ID).Return(user, nil)
-	organizationRepo.On("ListOrganizationMembershipsByUserId", ctx, user.ID).Return(schema.OrganizationMemberships{}, errors.ErrResourceNotFound)
+	userRepo.On("GetByID", ctx, user.ID).Return(user, nil)
+	organizationRepo.
+		On("ListOrganizationMembershipsByUserID", ctx, user.ID).
+		Return(schema.OrganizationMemberships{}, errors.ErrResourceNotFound)
 
-	hasPermissons, err := resolver.HasPermissions(ctx, []string{"short-url:read"}, user.ID, &organizationId)
+	hasPermissons, err := resolver.HasPermissions(ctx, []string{"short-url:read"}, user.ID, &organizationID)
 
-	assert.False(t, hasPermissons)
-	assert.ErrorIs(t, err, errors.ErrResourceNotFound)
+	require.False(t, hasPermissons)
+	require.ErrorIs(t, err, errors.ErrResourceNotFound)
 }
 
 func TestHasPermissionsWithGlobalRole(t *testing.T) {
@@ -57,19 +59,19 @@ func TestHasPermissionsWithGlobalRole(t *testing.T) {
 	organizationRepo := &testUtils.MockedOrganizationRepository{}
 	resolver := resolver.New(userRepo, organizationRepo)
 	ctx := context.Background()
-	user := &schema.User{ID: gofakeit.UUID(), RoleID: roles.RoleIdProvisional}
+	user := &schema.User{ID: gofakeit.UUID(), RoleID: roles.RoleIDProvisional}
 
-	userRepo.On("GetById", ctx, user.ID).Return(user, nil)
+	userRepo.On("GetByID", ctx, user.ID).Return(user, nil)
 
 	hasPermissons, err := resolver.HasPermissions(ctx, []string{"me:read"}, user.ID, nil)
 
-	assert.True(t, hasPermissons)
-	assert.NoError(t, err)
+	require.True(t, hasPermissons)
+	require.NoError(t, err)
 
 	hasPermissons, err = resolver.HasPermissions(ctx, []string{"short-url:list"}, user.ID, nil)
 
-	assert.False(t, hasPermissons)
-	assert.NoError(t, err)
+	require.False(t, hasPermissons)
+	require.NoError(t, err)
 }
 
 func TestHasPermissionsWithOrganizationalRole(t *testing.T) {
@@ -78,24 +80,26 @@ func TestHasPermissionsWithOrganizationalRole(t *testing.T) {
 	userRepo := &testUtils.MockedUserRepository{}
 	organizationRepo := &testUtils.MockedOrganizationRepository{}
 	resolver := resolver.New(userRepo, organizationRepo)
-	ctx, organizationId := context.Background(), gofakeit.UUID()
-	user := &schema.User{ID: gofakeit.UUID(), RoleID: roles.RoleIdProvisional}
+	ctx, organizationID := context.Background(), gofakeit.UUID()
+	user := &schema.User{ID: gofakeit.UUID(), RoleID: roles.RoleIDProvisional}
 	membership := schema.OrganizationMembership{
-		Organization: schema.ShortOrganization{ID: organizationId},
-		RoleID:       roles.RoleIdMember,
+		Organization: schema.ShortOrganization{ID: organizationID},
+		RoleID:       roles.RoleIDMember,
 	}
 
-	userRepo.On("GetById", ctx, user.ID).Return(user, nil)
-	organizationRepo.On("ListOrganizationMembershipsByUserId", ctx, user.ID).Return(schema.OrganizationMemberships{&membership}, nil)
+	userRepo.On("GetByID", ctx, user.ID).Return(user, nil)
+	organizationRepo.
+		On("ListOrganizationMembershipsByUserID", ctx, user.ID).
+		Return(schema.OrganizationMemberships{&membership}, nil)
 
-	hasPermissons, err := resolver.HasPermissions(ctx, []string{"short-url:read"}, user.ID, &organizationId)
+	hasPermissons, err := resolver.HasPermissions(ctx, []string{"short-url:read"}, user.ID, &organizationID)
 
-	assert.True(t, hasPermissons)
-	assert.NoError(t, err)
+	require.True(t, hasPermissons)
+	require.NoError(t, err)
 
-	organizationId = gofakeit.UUID()
-	hasPermissons, err = resolver.HasPermissions(ctx, []string{"short-url:read"}, user.ID, &organizationId)
+	organizationID = gofakeit.UUID()
+	hasPermissons, err = resolver.HasPermissions(ctx, []string{"short-url:read"}, user.ID, &organizationID)
 
-	assert.False(t, hasPermissons)
-	assert.NoError(t, err)
+	require.False(t, hasPermissons)
+	require.NoError(t, err)
 }

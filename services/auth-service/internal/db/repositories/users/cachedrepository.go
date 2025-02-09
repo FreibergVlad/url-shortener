@@ -2,6 +2,7 @@ package users
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -11,29 +12,29 @@ import (
 )
 
 const (
-	cacheKeyTypeId    = "id"
+	cacheKeyTypeID    = "id"
 	cacheKeyTypeEmail = "email"
 )
 
-type cachedUserRepository struct {
+type CachedRepository struct {
 	repository Repository
 	cache      cache.Cache[schema.User]
 	ttl        time.Duration
 }
 
-func NewCachedUserRepository(
+func NewCachedRepository(
 	repository Repository,
 	cache cache.Cache[schema.User],
 	ttl time.Duration,
-) *cachedUserRepository {
-	return &cachedUserRepository{
+) *CachedRepository {
+	return &CachedRepository{
 		repository: repository,
 		cache:      cache,
 		ttl:        ttl,
 	}
 }
 
-func (r *cachedUserRepository) Create(ctx context.Context, user *schema.User) error {
+func (r *CachedRepository) Create(ctx context.Context, user *schema.User) error {
 	err := r.repository.Create(ctx, user)
 	if err != nil {
 		return err
@@ -44,13 +45,13 @@ func (r *cachedUserRepository) Create(ctx context.Context, user *schema.User) er
 	return nil
 }
 
-func (r *cachedUserRepository) GetById(ctx context.Context, id string) (*schema.User, error) {
-	user := r.tryCacheGet(ctx, r.cacheKey(cacheKeyTypeId, id))
+func (r *CachedRepository) GetByID(ctx context.Context, userID string) (*schema.User, error) {
+	user := r.tryCacheGet(ctx, r.cacheKey(cacheKeyTypeID, userID))
 	if user != nil {
 		return user, nil
 	}
 
-	user, err := r.repository.GetById(ctx, id)
+	user, err := r.repository.GetByID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +61,7 @@ func (r *cachedUserRepository) GetById(ctx context.Context, id string) (*schema.
 	return user, nil
 }
 
-func (r *cachedUserRepository) GetByEmail(ctx context.Context, email string) (*schema.User, error) {
+func (r *CachedRepository) GetByEmail(ctx context.Context, email string) (*schema.User, error) {
 	user := r.tryCacheGet(ctx, r.cacheKey(cacheKeyTypeEmail, email))
 	if user != nil {
 		return user, nil
@@ -76,8 +77,8 @@ func (r *cachedUserRepository) GetByEmail(ctx context.Context, email string) (*s
 	return user, nil
 }
 
-func (r *cachedUserRepository) cacheUser(ctx context.Context, user *schema.User) {
-	for _, key := range []string{r.cacheKey(cacheKeyTypeId, user.ID), r.cacheKey(cacheKeyTypeEmail, user.Email)} {
+func (r *CachedRepository) cacheUser(ctx context.Context, user *schema.User) {
+	for _, key := range []string{r.cacheKey(cacheKeyTypeID, user.ID), r.cacheKey(cacheKeyTypeEmail, user.Email)} {
 		err := r.cache.Set(ctx, &cache.Item[schema.User]{
 			Key:   key,
 			Value: user,
@@ -89,17 +90,17 @@ func (r *cachedUserRepository) cacheUser(ctx context.Context, user *schema.User)
 	}
 }
 
-func (r *cachedUserRepository) tryCacheGet(ctx context.Context, key string) *schema.User {
+func (r *CachedRepository) tryCacheGet(ctx context.Context, key string) *schema.User {
 	resource, err := r.cache.Get(ctx, key)
 	if err == nil {
 		return resource
 	}
-	if err != cache.ErrCacheMiss {
+	if !errors.Is(err, cache.ErrCacheMiss) {
 		log.Error().Err(err).Msgf("error getting %s from cache", key)
 	}
 	return nil
 }
 
-func (r *cachedUserRepository) cacheKey(keyType, keyValue string) string {
+func (r *CachedRepository) cacheKey(keyType, keyValue string) string {
 	return fmt.Sprintf("users:%s:%s", keyType, keyValue)
 }

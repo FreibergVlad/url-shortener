@@ -14,13 +14,14 @@ import (
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/errors"
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/jwt"
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/must"
-	"github.com/brianvoe/gofakeit"
+	"github.com/brianvoe/gofakeit/v7"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
 	fakePassword     = "fake-pass"
-	fakePasswordHash = "$2a$10$duILFNZWb9k1VAnQoON1Zu9NpA70BylznDP6lpU6yJIfHPMB/Kfza"
+	fakePasswordHash = "$2a$10$duILFNZWb9k1VAnQoON1Zu9NpA70BylznDP6lpU6yJIfHPMB/Kfza" //nolint:gosec
 )
 
 func TestIssueAuthenticationToken(t *testing.T) {
@@ -44,7 +45,8 @@ func TestIssueAuthenticationToken(t *testing.T) {
 
 	response, err := tokenService.IssueAuthenticationToken(context.Background(), &request)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
+
 	assert.NotEmpty(t, response.Token)
 	assert.NotEmpty(t, response.RefreshToken)
 
@@ -67,7 +69,8 @@ func TestIssueAuthenticationTokenWhenDatabaseError(t *testing.T) {
 
 	response, err := tokenService.IssueAuthenticationToken(context.Background(), &request)
 
-	assert.ErrorContains(t, err, "invalid credentials")
+	require.ErrorContains(t, err, "invalid credentials")
+
 	assert.Nil(t, response)
 
 	userRepo.AssertExpectations(t)
@@ -94,7 +97,8 @@ func TestIssueAuthenticationTokenWhenInvalidPassword(t *testing.T) {
 
 	response, err := tokenService.IssueAuthenticationToken(ctx, &request)
 
-	assert.ErrorContains(t, err, "invalid credentials")
+	require.ErrorContains(t, err, "invalid credentials")
+
 	assert.Nil(t, response)
 
 	userRepo.AssertExpectations(t)
@@ -111,7 +115,8 @@ func TestRefreshAuthenticationToken(t *testing.T) {
 
 	response, err := tokenService.RefreshAuthenticationToken(context.Background(), &request)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
+
 	assert.NotEmpty(t, response.Token)
 }
 
@@ -125,6 +130,7 @@ func TestRefreshAuthenticationTokenWhenInvalidToken(t *testing.T) {
 
 	response, err := tokenService.RefreshAuthenticationToken(context.Background(), &request)
 
-	assert.ErrorContains(t, err, "token is malformed")
+	require.ErrorContains(t, err, "token is malformed")
+
 	assert.Nil(t, response)
 }

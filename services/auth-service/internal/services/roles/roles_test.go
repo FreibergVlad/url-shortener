@@ -18,10 +18,10 @@ func TestHasScopes(t *testing.T) {
 func TestGetRole(t *testing.T) {
 	t.Parallel()
 
-	actualRole, ok := roles.GetRole(roles.RoleIdSuperAdmin)
+	actualRole, ok := roles.GetRole(roles.RoleIDSuperAdmin)
 	assert.True(t, ok)
 	assert.Equal(t, roles.RoleSuperAdmin, actualRole)
 
-	_, ok = roles.GetRole(roles.RoleId("invalid-role-id"))
+	_, ok = roles.GetRole(roles.RoleID("invalid-role-id"))
 	assert.False(t, ok)
 }

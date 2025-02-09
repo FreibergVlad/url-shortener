@@ -15,7 +15,9 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 )
 
-type TestingServer struct {
+const buffConnBufSizeBytes = 1024 * 1024
+
+type Server struct {
 	UserServiceClient         userServiceProto.UserServiceClient
 	TokenServiceClient        tokenServiceProto.TokenServiceClient
 	PermissionServiceClient   permissionServiceProto.PermissionServiceClient
@@ -23,10 +25,10 @@ type TestingServer struct {
 	InvitationServiceClient   invitationServiceProto.InvitationServiceClient
 }
 
-func BootstrapServer() (*TestingServer, func()) {
+func BootstrapServer() (*Server, func()) {
 	migrations.Migrate(config.NewMigrationConfig())
 
-	listener := bufconn.Listen(1024 * 1024)
+	listener := bufconn.Listen(buffConnBufSizeBytes)
 	server, baseTeardown := server.Bootstrap(config.NewIdentityServiceConfig(), listener)
 	stopped := make(chan struct{}, 1)
 
@@ -42,7 +44,7 @@ func BootstrapServer() (*TestingServer, func()) {
 	}()
 
 	client := integration.BufnetGrpcClient(listener)
-	return &TestingServer{
+	return &Server{
 		UserServiceClient:         userServiceProto.NewUserServiceClient(client),
 		TokenServiceClient:        tokenServiceProto.NewTokenServiceClient(client),
 		PermissionServiceClient:   permissionServiceProto.NewPermissionServiceClient(client),

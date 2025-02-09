@@ -10,12 +10,13 @@ import (
 	"github.com/FreibergVlad/url-shortener/auth-service/internal/services/roles"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/rs/zerolog/log"
 )
 
 type Repository interface {
 	Create(ctx context.Context, organization *schema.Organization) error
 	CreateOrganizationMembership(ctx context.Context, params *CreateOrganizationMembershipParams) error
-	ListOrganizationMembershipsByUserId(ctx context.Context, userId string) (schema.OrganizationMemberships, error)
+	ListOrganizationMembershipsByUserID(ctx context.Context, userID string) (schema.OrganizationMemberships, error)
 }
 
 type CreateOrganizationMembershipParams struct {
@@ -25,35 +26,47 @@ type CreateOrganizationMembershipParams struct {
 	CreatedAt      time.Time
 }
 
-type organizationRepository struct {
+type PostgresRepository struct {
 	db *pgxpool.Pool
 }
 
-func NewOrganizationRepository(db *pgxpool.Pool) *organizationRepository {
-	return &organizationRepository{db: db}
+func NewRepository(db *pgxpool.Pool) *PostgresRepository {
+	return &PostgresRepository{db: db}
 }
 
-func (r *organizationRepository) Create(ctx context.Context, organization *schema.Organization) (err error) {
-	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
+func (r *PostgresRepository) Create(ctx context.Context, organization *schema.Organization) error {
+	var err error
+
+	transactionCtx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return repositories.TranslatePgError(err)
 	}
+
 	defer func() {
+		if transactionCtx == nil {
+			return
+		}
+
 		if err != nil {
-			tx.Rollback(ctx)
+			if rollbackErr := transactionCtx.Rollback(ctx); rollbackErr != nil {
+				log.Err(rollbackErr).Msg("failed to rollback transaction")
+			}
 		} else {
-			tx.Commit(ctx)
+			if commitErr := transactionCtx.Commit(ctx); commitErr != nil {
+				log.Err(commitErr).Msg("failed to rollback transaction")
+				err = commitErr
+			}
 		}
 	}()
 
-	querier := gen.New(tx)
+	querier := gen.New(transactionCtx)
 
-	id := repositories.MustPgUUIDFromString(organization.ID)
+	organizationID := repositories.MustPgUUIDFromString(organization.ID)
 	createdBy := repositories.MustPgUUIDFromString(organization.CreatedBy)
 	createdAt := repositories.MustPgTimestamptzFromTime(organization.CreatedAt)
 
 	createOrgParams := gen.CreateOrganizationParams{
-		ID:        id,
+		ID:        organizationID,
 		Name:      organization.Name,
 		Slug:      organization.Slug,
 		CreatedAt: createdAt,
@@ -65,9 +78,9 @@ func (r *organizationRepository) Create(ctx context.Context, organization *schem
 	}
 
 	createOrgMembershipParams := gen.CreateOrganizationMembershipParams{
-		OrganizationID: id,
+		OrganizationID: organizationID,
 		UserID:         createdBy,
-		RoleID:         roles.RoleIdOwner,
+		RoleID:         roles.RoleIDOwner,
 		CreatedAt:      createdAt,
 	}
 	err = querier.CreateOrganizationMembership(ctx, createOrgMembershipParams)
@@ -78,7 +91,9 @@ func (r *organizationRepository) Create(ctx context.Context, organization *schem
 	return nil
 }
 
-func (r *organizationRepository) CreateOrganizationMembership(ctx context.Context, params *CreateOrganizationMembershipParams) error {
+func (r *PostgresRepository) CreateOrganizationMembership(
+	ctx context.Context, params *CreateOrganizationMembershipParams,
+) error {
 	querier := gen.New(r.db)
 	createOrgMembershipParams := gen.CreateOrganizationMembershipParams{
 		OrganizationID: repositories.MustPgUUIDFromString(params.OrganizationID),
@@ -90,10 +105,12 @@ func (r *organizationRepository) CreateOrganizationMembership(ctx context.Contex
 	return repositories.TranslatePgError(querier.CreateOrganizationMembership(ctx, createOrgMembershipParams))
 }
 
-func (r *organizationRepository) ListOrganizationMembershipsByUserId(ctx context.Context, userId string) (schema.OrganizationMemberships, error) {
+func (r *PostgresRepository) ListOrganizationMembershipsByUserID(
+	ctx context.Context, userID string,
+) (schema.OrganizationMemberships, error) {
 	querier := gen.New(r.db)
 
-	rows, err := querier.ListOrganizationMembershipsByUserId(ctx, repositories.MustPgUUIDFromString(userId))
+	rows, err := querier.ListOrganizationMembershipsByUserId(ctx, repositories.MustPgUUIDFromString(userID))
 	if err != nil {
 		return nil, repositories.TranslatePgError(err)
 	}

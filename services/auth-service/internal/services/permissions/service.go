@@ -9,27 +9,32 @@ import (
 )
 
 type PermissionResolver interface {
-	HasPermissions(ctx context.Context, scopes []string, userId string, organizationId *string) (bool, error)
+	HasPermissions(ctx context.Context, scopes []string, userID string, organizationID *string) (bool, error)
 }
 
-type permissionService struct {
+type PermissionService struct {
 	protoService.UnimplementedPermissionServiceServer
 	permissionResolver PermissionResolver
 }
 
-func New(permissionResolver PermissionResolver) *permissionService {
-	return &permissionService{permissionResolver: permissionResolver}
+func New(permissionResolver PermissionResolver) *PermissionService {
+	return &PermissionService{permissionResolver: permissionResolver}
 }
 
-func (s *permissionService) HasPermissions(ctx context.Context, req *protoMessages.HasPermissionsRequest) (*protoMessages.HasPermissionsResponse, error) {
-	userId := grpcUtils.UserIDFromIncomingContext(ctx)
-	var organizationId *string
+func (s *PermissionService) HasPermissions(
+	ctx context.Context, req *protoMessages.HasPermissionsRequest,
+) (*protoMessages.HasPermissionsResponse, error) {
+	userID := grpcUtils.UserIDFromIncomingContext(ctx)
+
+	var organizationID *string
 	if req.OrganizationContext != nil {
-		organizationId = &req.OrganizationContext.OrganizationId
+		organizationID = &req.OrganizationContext.OrganizationId
 	}
-	hasPermissions, err := s.permissionResolver.HasPermissions(ctx, req.Scopes, userId, organizationId)
+
+	hasPermissions, err := s.permissionResolver.HasPermissions(ctx, req.Scopes, userID, organizationID)
 	if err != nil {
 		return nil, err
 	}
+
 	return &protoMessages.HasPermissionsResponse{HasPermissions: hasPermissions}, nil
 }

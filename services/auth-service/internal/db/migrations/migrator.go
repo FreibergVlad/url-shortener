@@ -1,11 +1,13 @@
 package migrations
 
 import (
+	"errors"
+
 	"github.com/FreibergVlad/url-shortener/auth-service/internal/config"
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/must"
 	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/pgx/v5"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/golang-migrate/migrate/v4/database/pgx/v5" // load PostgreSQL driver
+	_ "github.com/golang-migrate/migrate/v4/source/file"     // load file source driver
 	"github.com/rs/zerolog/log"
 )
 
@@ -19,7 +21,7 @@ func Migrate(config config.MigrationConfig) {
 		log.Info().Msg("migrations applied successfully")
 		return
 	}
-	if err == migrate.ErrNoChange {
+	if errors.Is(err, migrate.ErrNoChange) {
 		log.Info().Msg("no new migrations to apply")
 		return
 	}

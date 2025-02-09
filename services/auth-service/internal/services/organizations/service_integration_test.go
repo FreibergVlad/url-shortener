@@ -11,6 +11,7 @@ import (
 	grpcUtils "github.com/FreibergVlad/url-shortener/shared/go/pkg/api/grpc/utils"
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/testing/integration"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCreateOrganizationWhenDuplicateSlug_Integration(t *testing.T) {
@@ -18,9 +19,10 @@ func TestCreateOrganizationWhenDuplicateSlug_Integration(t *testing.T) {
 	integration.MaybeSkipIntegrationTest(t)
 
 	server, teardown := testUtils.BootstrapServer()
-	defer teardown()
 
-	user := testUtils.CreateTestUser(server, t)
+	t.Cleanup(teardown)
+
+	user := testUtils.CreateTestUser(t, server)
 	request := testUtils.CreateTestOrganizationRequest()
 
 	_, err := server.OrganizationServiceClient.CreateOrganization(
@@ -28,7 +30,7 @@ func TestCreateOrganizationWhenDuplicateSlug_Integration(t *testing.T) {
 		request,
 	)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	response, err := server.OrganizationServiceClient.CreateOrganization(
 		grpcUtils.OutgoingContextWithUserID(context.Background(), user.Id),
@@ -44,14 +46,16 @@ func TestCreateOrganizationWhenUnauthenticated_Integration(t *testing.T) {
 	integration.MaybeSkipIntegrationTest(t)
 
 	server, teardown := testUtils.BootstrapServer()
-	defer teardown()
+
+	t.Cleanup(teardown)
 
 	request := testUtils.CreateTestOrganizationRequest()
 
 	response, err := server.OrganizationServiceClient.CreateOrganization(context.Background(), request)
 
+	require.ErrorContains(t, err, "Unauthenticated")
+
 	assert.Nil(t, response)
-	assert.ErrorContains(t, err, "Unauthenticated")
 }
 
 func TestCreateOrganizationWhenInvalidRequest_Integration(t *testing.T) {
@@ -59,9 +63,10 @@ func TestCreateOrganizationWhenInvalidRequest_Integration(t *testing.T) {
 	integration.MaybeSkipIntegrationTest(t)
 
 	server, teardown := testUtils.BootstrapServer()
-	defer teardown()
 
-	user := testUtils.CreateTestUser(server, t)
+	t.Cleanup(teardown)
+
+	user := testUtils.CreateTestUser(t, server)
 	tests := []struct {
 		test string
 		name string
@@ -75,6 +80,8 @@ func TestCreateOrganizationWhenInvalidRequest_Integration(t *testing.T) {
 
 	for _, input := range tests {
 		t.Run(input.name, func(t *testing.T) {
+			t.Parallel()
+
 			request := &organizationServiceMessages.CreateOrganizationRequest{
 				Name: input.name,
 				Slug: input.slug,
@@ -84,8 +91,9 @@ func TestCreateOrganizationWhenInvalidRequest_Integration(t *testing.T) {
 				request,
 			)
 
+			require.ErrorContains(t, err, "InvalidArgument")
+
 			assert.Nil(t, response)
-			assert.ErrorContains(t, err, "InvalidArgument")
 		})
 	}
 }
@@ -95,23 +103,22 @@ func TestCreateAndListOrganizationMemberships_Integration(t *testing.T) {
 	integration.MaybeSkipIntegrationTest(t)
 
 	server, teardown := testUtils.BootstrapServer()
-	defer teardown()
 
-	user := testUtils.CreateTestUser(server, t)
-	organization := testUtils.CreateTestOrganization(server, user.Id, t)
+	t.Cleanup(teardown)
+
+	user := testUtils.CreateTestUser(t, server)
+	organization := testUtils.CreateTestOrganization(t, server, user.Id)
 
 	response, err := server.OrganizationServiceClient.ListMeOrganizationMemberships(
 		grpcUtils.OutgoingContextWithUserID(context.Background(), user.Id),
 		&organizationServiceMessages.ListMeOrganizationMembershipsRequest{},
 	)
 
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err)
 
-	assert.Equal(t, 1, len(response.Data))
+	assert.Len(t, response.Data, 1)
 
 	assert.Equal(t, organization.Id, response.Data[0].Organization.Id)
 	assert.Equal(t, organization.Slug, response.Data[0].Organization.Slug)
-	assert.Equal(t, roles.RoleIdOwner, response.Data[0].Role.Id)
+	assert.Equal(t, roles.RoleIDOwner, response.Data[0].Role.Id)
 }

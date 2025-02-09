@@ -10,19 +10,19 @@ import (
 
 type Repository interface {
 	Create(ctx context.Context, user *schema.User) error
-	GetById(ctx context.Context, id string) (*schema.User, error)
+	GetByID(ctx context.Context, id string) (*schema.User, error)
 	GetByEmail(ctx context.Context, email string) (*schema.User, error)
 }
 
-type userRepository struct {
+type PostgresRepository struct {
 	db gen.DBTX
 }
 
-func NewUserRepository(db gen.DBTX) *userRepository {
-	return &userRepository{db: db}
+func NewRepository(db gen.DBTX) *PostgresRepository {
+	return &PostgresRepository{db: db}
 }
 
-func (r *userRepository) Create(ctx context.Context, user *schema.User) error {
+func (r *PostgresRepository) Create(ctx context.Context, user *schema.User) error {
 	querier := gen.New(r.db)
 
 	params := gen.CreateUserParams{
@@ -38,7 +38,7 @@ func (r *userRepository) Create(ctx context.Context, user *schema.User) error {
 	return repositories.TranslatePgError(querier.CreateUser(ctx, params))
 }
 
-func (r *userRepository) GetById(ctx context.Context, id string) (*schema.User, error) {
+func (r *PostgresRepository) GetByID(ctx context.Context, id string) (*schema.User, error) {
 	querier := gen.New(r.db)
 
 	user, err := querier.GetUserById(ctx, repositories.MustPgUUIDFromString(id))
@@ -49,7 +49,7 @@ func (r *userRepository) GetById(ctx context.Context, id string) (*schema.User, 
 	return r.userFromRow(user), nil
 }
 
-func (r *userRepository) GetByEmail(ctx context.Context, email string) (*schema.User, error) {
+func (r *PostgresRepository) GetByEmail(ctx context.Context, email string) (*schema.User, error) {
 	querier := gen.New(r.db)
 
 	user, err := querier.GetUserByEmail(ctx, email)
@@ -60,7 +60,7 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*schema.
 	return r.userFromRow(user), nil
 }
 
-func (r *userRepository) userFromRow(user gen.User) *schema.User {
+func (r *PostgresRepository) userFromRow(user gen.User) *schema.User {
 	return &schema.User{
 		ID:           repositories.MustPgUUIDToString(user.ID),
 		PasswordHash: user.PasswordHash,

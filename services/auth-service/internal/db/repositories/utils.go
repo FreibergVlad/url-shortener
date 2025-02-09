@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -19,7 +20,14 @@ func MustPgUUIDFromString(uuid string) pgtype.UUID {
 }
 
 func MustPgUUIDToString(uuid pgtype.UUID) string {
-	return fmt.Sprintf("%x-%x-%x-%x-%x", uuid.Bytes[0:4], uuid.Bytes[4:6], uuid.Bytes[6:8], uuid.Bytes[8:10], uuid.Bytes[10:16])
+	return fmt.Sprintf(
+		"%x-%x-%x-%x-%x",
+		uuid.Bytes[0:4],
+		uuid.Bytes[4:6],
+		uuid.Bytes[6:8],
+		uuid.Bytes[8:10],
+		uuid.Bytes[10:16],
+	)
 }
 
 func MustPgTimestamptzFromTime(time time.Time) pgtype.Timestamptz {
@@ -29,9 +37,9 @@ func MustPgTimestamptzFromTime(time time.Time) pgtype.Timestamptz {
 }
 
 func TranslatePgError(err error) error {
-	pgErr, ok := err.(*pgconn.PgError)
-	if !ok {
-		if err == pgx.ErrNoRows {
+	var pgErr *pgconn.PgError
+	if !errors.As(err, &pgErr) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return serviceErrors.ErrResourceNotFound
 		}
 		return err

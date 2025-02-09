@@ -17,7 +17,7 @@ func (r *MockedUserRepository) Create(ctx context.Context, user *schema.User) er
 	return args.Error(0)
 }
 
-func (r *MockedUserRepository) GetById(ctx context.Context, id string) (*schema.User, error) {
+func (r *MockedUserRepository) GetByID(ctx context.Context, id string) (*schema.User, error) {
 	args := r.Called(ctx, id)
 	return args.Get(0).(*schema.User), args.Error(1)
 }
@@ -36,12 +36,16 @@ func (r *MockedOrganizationRepository) Create(ctx context.Context, organization 
 	return args.Error(0)
 }
 
-func (r *MockedOrganizationRepository) CreateOrganizationMembership(ctx context.Context, params *organizations.CreateOrganizationMembershipParams) error {
+func (r *MockedOrganizationRepository) CreateOrganizationMembership(
+	ctx context.Context, params *organizations.CreateOrganizationMembershipParams,
+) error {
 	args := r.Called(ctx, params)
 	return args.Error(0)
 }
 
-func (r *MockedOrganizationRepository) ListOrganizationMembershipsByUserId(ctx context.Context, userId string) (schema.OrganizationMemberships, error) {
-	args := r.Called(ctx, userId)
+func (r *MockedOrganizationRepository) ListOrganizationMembershipsByUserID(
+	ctx context.Context, userID string,
+) (schema.OrganizationMemberships, error) {
+	args := r.Called(ctx, userID)
 	return args.Get(0).(schema.OrganizationMemberships), args.Error(1)
 }

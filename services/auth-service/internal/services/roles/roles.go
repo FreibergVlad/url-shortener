@@ -3,7 +3,7 @@ package roles
 import permissionServiceMessages "github.com/FreibergVlad/url-shortener/proto/pkg/permissions/messages/v1"
 
 type (
-	RoleId   = string
+	RoleID   = string
 	RoleType = string
 )
 
@@ -13,16 +13,16 @@ var (
 )
 
 var (
-	RoleIdSuperAdmin  RoleId = "super_admin"
-	RoleIdOwner       RoleId = "owner"
-	RoleIdAdmin       RoleId = "admin"
-	RoleIdMember      RoleId = "member"
-	RoleIdProvisional RoleId = "provisional"
+	RoleIDSuperAdmin  RoleID = "super_admin"
+	RoleIDOwner       RoleID = "owner"
+	RoleIDAdmin       RoleID = "admin"
+	RoleIDMember      RoleID = "member"
+	RoleIDProvisional RoleID = "provisional"
 )
 
 var (
-	RoleSuperAdmin = role{
-		ID:          RoleIdSuperAdmin,
+	RoleSuperAdmin = Role{
+		ID:          RoleIDSuperAdmin,
 		Name:        "Super Admin",
 		Type:        RoleTypeGlobal,
 		Description: "Full access across all organizations and short URLs.",
@@ -39,8 +39,8 @@ var (
 			"me:read",
 		),
 	}
-	RoleProvisional = role{
-		ID:          RoleIdProvisional,
+	RoleProvisional = Role{
+		ID:          RoleIDProvisional,
 		Name:        "Provisional",
 		Type:        RoleTypeGlobal,
 		Description: "Automatically assigned role to the newly registered user.",
@@ -50,8 +50,8 @@ var (
 			"me:read",
 		),
 	}
-	RoleOwner = role{
-		ID:          RoleIdOwner,
+	RoleOwner = Role{
+		ID:          RoleIDOwner,
 		Name:        "Owner",
 		Type:        RoleTypeOrganizational,
 		Description: "Full access within a specific organization.",
@@ -65,8 +65,8 @@ var (
 			"short-url:delete",
 		),
 	}
-	RoleAdmin = role{
-		ID:          RoleIdAdmin,
+	RoleAdmin = Role{
+		ID:          RoleIDAdmin,
 		Name:        "Admin",
 		Type:        RoleTypeOrganizational,
 		Description: "Full short URL access within a specific organization.",
@@ -80,8 +80,8 @@ var (
 			"short-url:delete",
 		),
 	}
-	RoleMember = role{
-		ID:          RoleIdMember,
+	RoleMember = Role{
+		ID:          RoleIDMember,
 		Name:        "Member",
 		Type:        RoleTypeOrganizational,
 		Description: "Read-only access within a specific organization.",
@@ -92,23 +92,23 @@ var (
 	}
 )
 
-var roles map[RoleId]role = map[RoleId]role{
-	RoleIdSuperAdmin:  RoleSuperAdmin,
-	RoleIdOwner:       RoleOwner,
-	RoleIdAdmin:       RoleAdmin,
-	RoleIdMember:      RoleMember,
-	RoleIdProvisional: RoleProvisional,
+var roles = map[RoleID]Role{
+	RoleIDSuperAdmin:  RoleSuperAdmin,
+	RoleIDOwner:       RoleOwner,
+	RoleIDAdmin:       RoleAdmin,
+	RoleIDMember:      RoleMember,
+	RoleIDProvisional: RoleProvisional,
 }
 
-type role struct {
-	ID          RoleId
+type Role struct {
+	ID          RoleID
 	Name        string
 	Type        RoleType
 	Description string
 	Scopes      map[string]struct{}
 }
 
-func (r role) HasScopes(scopes []string) bool {
+func (r Role) HasScopes(scopes []string) bool {
 	for _, scope := range scopes {
 		if _, ok := r.Scopes[scope]; !ok {
 			return false
@@ -117,20 +117,20 @@ func (r role) HasScopes(scopes []string) bool {
 	return true
 }
 
-func GetRole(id RoleId) (role, bool) {
+func GetRole(id RoleID) (Role, bool) {
 	if role, ok := roles[id]; ok {
 		return role, true
 	}
-	return role{}, false
+	return Role{}, false
 }
 
-func GetRoleProto(id RoleId) *permissionServiceMessages.Role {
+func GetRoleProto(id RoleID) *permissionServiceMessages.Role {
 	role, ok := GetRole(id)
 	if !ok {
 		return nil
 	}
 	return &permissionServiceMessages.Role{
-		Id:          id,
+		Id:          role.ID,
 		Name:        role.Name,
 		Description: role.Description,
 	}

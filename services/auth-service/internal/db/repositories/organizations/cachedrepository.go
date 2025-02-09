@@ -2,6 +2,7 @@ package organizations
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -10,72 +11,85 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type cachedOrganizationRepository struct {
+type CachedRepository struct {
 	repository                  Repository
 	organizationMembershipCache cache.Cache[schema.OrganizationMemberships]
 	ttl                         time.Duration
 }
 
-func NewCachedUserRepository(
+func NewCachedRepository(
 	repository Repository,
 	organizationMembershipCache cache.Cache[schema.OrganizationMemberships],
 	ttl time.Duration,
-) *cachedOrganizationRepository {
-	return &cachedOrganizationRepository{
+) *CachedRepository {
+	return &CachedRepository{
 		repository:                  repository,
 		organizationMembershipCache: organizationMembershipCache,
 		ttl:                         ttl,
 	}
 }
 
-func (r *cachedOrganizationRepository) Create(ctx context.Context, organization *schema.Organization) error {
-	err := r.repository.Create(ctx, organization)
-	if err != nil {
+func (r *CachedRepository) Create(ctx context.Context, organization *schema.Organization) error {
+	if err := r.repository.Create(ctx, organization); err != nil {
 		return err
 	}
-	r.organizationMembershipCache.Delete(ctx, organizationMembershipsCacheKey(organization.CreatedBy))
+
+	r.uncacheOrganizationMemberships(ctx, organization.CreatedBy)
+
 	return nil
 }
 
-func (r *cachedOrganizationRepository) CreateOrganizationMembership(ctx context.Context, params *CreateOrganizationMembershipParams) error {
-	err := r.repository.CreateOrganizationMembership(ctx, params)
-	if err != nil {
+func (r *CachedRepository) CreateOrganizationMembership(
+	ctx context.Context, params *CreateOrganizationMembershipParams,
+) error {
+	if err := r.repository.CreateOrganizationMembership(ctx, params); err != nil {
 		return err
 	}
-	r.organizationMembershipCache.Delete(ctx, organizationMembershipsCacheKey(params.UserID))
+
+	r.uncacheOrganizationMemberships(ctx, params.UserID)
+
 	return nil
 }
 
-func (r *cachedOrganizationRepository) ListOrganizationMembershipsByUserId(ctx context.Context, userId string) (schema.OrganizationMemberships, error) {
-	memberships := r.getOrganizationMembershipsFromCache(ctx, userId)
+func (r *CachedRepository) ListOrganizationMembershipsByUserID(
+	ctx context.Context, userID string,
+) (schema.OrganizationMemberships, error) {
+	memberships := r.getOrganizationMembershipsFromCache(ctx, userID)
 	if memberships != nil {
 		return memberships, nil
 	}
 
-	memberships, err := r.repository.ListOrganizationMembershipsByUserId(ctx, userId)
+	memberships, err := r.repository.ListOrganizationMembershipsByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	r.cacheOrganizationMemberships(ctx, memberships, userId)
+	r.cacheOrganizationMemberships(ctx, memberships, userID)
 
 	return memberships, err
 }
 
-func (r cachedOrganizationRepository) getOrganizationMembershipsFromCache(ctx context.Context, userId string) schema.OrganizationMemberships {
-	key := organizationMembershipsCacheKey(userId)
+func (r *CachedRepository) getOrganizationMembershipsFromCache(
+	ctx context.Context, userID string,
+) schema.OrganizationMemberships {
+	key := organizationMembershipsCacheKey(userID)
+
 	memberships, err := r.organizationMembershipCache.Get(ctx, key)
 	if err == nil {
 		return *memberships
 	}
-	if err != cache.ErrCacheMiss {
+
+	if !errors.Is(err, cache.ErrCacheMiss) {
 		log.Error().Err(err).Msgf("error getting %s from cache", key)
 	}
+
 	return nil
 }
 
-func (r *cachedOrganizationRepository) cacheOrganizationMemberships(ctx context.Context, memberships schema.OrganizationMemberships, userId string) {
-	key := organizationMembershipsCacheKey(userId)
+func (r *CachedRepository) cacheOrganizationMemberships(
+	ctx context.Context, memberships schema.OrganizationMemberships, userID string,
+) {
+	key := organizationMembershipsCacheKey(userID)
 	item := cache.Item[schema.OrganizationMemberships]{
 		Key:   key,
 		Value: &memberships,
@@ -86,6 +100,13 @@ func (r *cachedOrganizationRepository) cacheOrganizationMemberships(ctx context.
 	}
 }
 
-func organizationMembershipsCacheKey(userId string) string {
-	return fmt.Sprintf("organization-memberships:user-id:%s", userId)
+func (r *CachedRepository) uncacheOrganizationMemberships(ctx context.Context, userID string) {
+	key := organizationMembershipsCacheKey(userID)
+	if err := r.organizationMembershipCache.Delete(ctx, key); err != nil {
+		log.Error().Err(err).Msgf("error deleting %s from cache", key)
+	}
+}
+
+func organizationMembershipsCacheKey(userID string) string {
+	return fmt.Sprintf("organization-memberships:user-id:%s", userID)
 }

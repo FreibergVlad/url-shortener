@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"net"
 	"time"
 
@@ -28,7 +29,7 @@ import (
 	grpcValidationMiddleware "github.com/FreibergVlad/url-shortener/shared/go/pkg/api/grpc/middlewares/validation"
 	redisCache "github.com/FreibergVlad/url-shortener/shared/go/pkg/cache/redis"
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/clock"
-	"github.com/FreibergVlad/url-shortener/shared/go/pkg/errors"
+	serviceErrors "github.com/FreibergVlad/url-shortener/shared/go/pkg/errors"
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/must"
 	grpcServer "github.com/FreibergVlad/url-shortener/shared/go/pkg/server/grpc"
 	"github.com/go-redis/cache/v9"
@@ -41,33 +42,37 @@ import (
 )
 
 func ensureAdminUserExists(userRepository users.Repository, config config.IdentityServiceConfig) error {
+	bcryptCost := 10
 	user := schema.User{
 		ID:           uuid.NewString(),
 		Email:        config.Admin.Email,
-		PasswordHash: string(must.Return(bcrypt.GenerateFromPassword([]byte(config.Admin.Password), 10))),
-		RoleID:       roles.RoleIdSuperAdmin,
+		PasswordHash: string(must.Return(bcrypt.GenerateFromPassword([]byte(config.Admin.Password), bcryptCost))),
+		RoleID:       roles.RoleIDSuperAdmin,
 		CreatedAt:    time.Now(),
 	}
 	err := userRepository.Create(context.Background(), &user)
-	if err == errors.ErrDuplicateResource {
+	if errors.Is(err, serviceErrors.ErrDuplicateResource) {
 		return nil
 	}
 	return err
 }
 
-func Bootstrap(config config.IdentityServiceConfig, listener net.Listener) (*grpcServer.GRPCServerWithGracefulShutdown, func()) {
+func Bootstrap(
+	config config.IdentityServiceConfig, listener net.Listener,
+) (*grpcServer.GRPCServerWithGracefulShutdown, func()) {
 	postgresConnPool := must.Return(pgxpool.New(context.TODO(), config.Postgres.DSN))
 
 	redisOptions := must.Return(redis.ParseURL(config.Redis.DSN))
 	redisClient := redis.NewClient(redisOptions)
+	redisCacheOptions := &cache.Options{Redis: redisClient}
 
-	redisUserCache := redisCache.New[schema.User](&cache.Options{Redis: redisClient})
-	redisOrganizationMembershipsCache := redisCache.New[schema.OrganizationMemberships](&cache.Options{Redis: redisClient})
+	redisUserCache := redisCache.New[schema.User](redisCacheOptions)
+	redisOrganizationMembershipsCache := redisCache.New[schema.OrganizationMemberships](redisCacheOptions)
 
-	userRepository := users.NewUserRepository(postgresConnPool)
-	cachedUserRepository := users.NewCachedUserRepository(userRepository, redisUserCache, time.Hour)
-	organizationRepository := organizations.NewOrganizationRepository(postgresConnPool)
-	cachedOrganizationRepository := organizations.NewCachedUserRepository(
+	userRepository := users.NewRepository(postgresConnPool)
+	cachedUserRepository := users.NewCachedRepository(userRepository, redisUserCache, time.Hour)
+	organizationRepository := organizations.NewRepository(postgresConnPool)
+	cachedOrganizationRepository := organizations.NewCachedRepository(
 		organizationRepository,
 		redisOrganizationMembershipsCache,
 		time.Hour,
@@ -98,11 +103,16 @@ func Bootstrap(config config.IdentityServiceConfig, listener net.Listener) (*grp
 			grpcValidationMiddleware.New(),
 			grpcAuthorizationMiddleware.New(
 				map[string]protoreflect.ServiceDescriptor{
-					"TokenService":        tokenServiceProto.File_tokens_service_v1_service_proto.Services().ByName("TokenService"),
-					"PermissionService":   permissionServiceProto.File_permissions_service_v1_service_proto.Services().ByName("PermissionService"),
-					"UserService":         userServiceProto.File_users_service_v1_service_proto.Services().ByName("UserService"),
-					"OrganizationService": organizationServiceProto.File_organizations_service_v1_service_proto.Services().ByName("OrganizationService"),
-					"InvitationService":   invitationServiceProto.File_invitations_service_v1_service_proto.Services().ByName("InvitationService"),
+					"TokenService": tokenServiceProto.
+						File_tokens_service_v1_service_proto.Services().ByName("TokenService"),
+					"PermissionService": permissionServiceProto.
+						File_permissions_service_v1_service_proto.Services().ByName("PermissionService"),
+					"UserService": userServiceProto.
+						File_users_service_v1_service_proto.Services().ByName("UserService"),
+					"OrganizationService": organizationServiceProto.
+						File_organizations_service_v1_service_proto.Services().ByName("OrganizationService"),
+					"InvitationService": invitationServiceProto.
+						File_invitations_service_v1_service_proto.Services().ByName("InvitationService"),
 				},
 				permissionResolver,
 			),

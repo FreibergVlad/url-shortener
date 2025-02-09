@@ -11,6 +11,7 @@ import (
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/testing/integration"
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCreateUser_Integration(t *testing.T) {
@@ -18,16 +19,17 @@ func TestCreateUser_Integration(t *testing.T) {
 	integration.MaybeSkipIntegrationTest(t)
 
 	server, teardown := testUtils.BootstrapServer()
-	defer teardown()
+
+	t.Cleanup(teardown)
 
 	request := testUtils.CreateTestUserRequest()
 
 	response, err := server.UserServiceClient.CreateUser(context.Background(), request)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, request.Email, response.User.Email)
-	assert.Equal(t, roles.RoleIdProvisional, response.User.Role.Id)
+	assert.Equal(t, roles.RoleIDProvisional, response.User.Role.Id)
 	assert.Equal(t, roles.RoleProvisional.Description, response.User.Role.Description)
 }
 
@@ -36,13 +38,14 @@ func TestCreateUserWhenDuplicateEmail_Integration(t *testing.T) {
 	integration.MaybeSkipIntegrationTest(t)
 
 	server, teardown := testUtils.BootstrapServer()
-	defer teardown()
+
+	t.Cleanup(teardown)
 
 	request := testUtils.CreateTestUserRequest()
 
 	_, err := server.UserServiceClient.CreateUser(context.Background(), request)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	response, err := server.UserServiceClient.CreateUser(context.Background(), request)
 	assert.Nil(t, response)
@@ -54,7 +57,8 @@ func TestCreateUserWhenInvalidRequest_Integration(t *testing.T) {
 	integration.MaybeSkipIntegrationTest(t)
 
 	server, teardown := testUtils.BootstrapServer()
-	defer teardown()
+
+	t.Cleanup(teardown)
 
 	response, err := server.UserServiceClient.CreateUser(context.Background(), &userServiceMessages.CreateUserRequest{})
 
@@ -67,7 +71,8 @@ func TestCreateUserWhenInvalidEmail_Integration(t *testing.T) {
 	integration.MaybeSkipIntegrationTest(t)
 
 	server, teardown := testUtils.BootstrapServer()
-	defer teardown()
+
+	t.Cleanup(teardown)
 
 	request := userServiceMessages.CreateUserRequest{
 		Email:    "not-an-email",
@@ -85,9 +90,10 @@ func TestGetMe_Integration(t *testing.T) {
 	integration.MaybeSkipIntegrationTest(t)
 
 	server, teardown := testUtils.BootstrapServer()
-	defer teardown()
 
-	user := testUtils.CreateTestUser(server, t)
+	t.Cleanup(teardown)
+
+	user := testUtils.CreateTestUser(t, server)
 
 	getMeRequest := userServiceMessages.GetMeRequest{}
 	getMeResponse, err := server.UserServiceClient.GetMe(
@@ -95,7 +101,8 @@ func TestGetMe_Integration(t *testing.T) {
 		&getMeRequest,
 	)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
+
 	assert.Equal(t, user.Id, getMeResponse.User.Id)
 	assert.Equal(t, user.Email, getMeResponse.User.Email)
 	assert.Equal(t, user.Role.Id, getMeResponse.User.Role.Id)
@@ -107,7 +114,8 @@ func TestGetMeWhenUnauthenticated_Integration(t *testing.T) {
 	integration.MaybeSkipIntegrationTest(t)
 
 	server, teardown := testUtils.BootstrapServer()
-	defer teardown()
+
+	t.Cleanup(teardown)
 
 	request := userServiceMessages.GetMeRequest{}
 

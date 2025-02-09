@@ -14,7 +14,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-type organizationService struct {
+type OrganizationService struct {
 	protoService.UnimplementedOrganizationServiceServer
 	organizationRepository organizations.Repository
 	clock                  clock.Clock
@@ -23,24 +23,24 @@ type organizationService struct {
 func New(
 	organizationRepository organizations.Repository,
 	clock clock.Clock,
-) *organizationService {
-	return &organizationService{
+) *OrganizationService {
+	return &OrganizationService{
 		organizationRepository: organizationRepository,
 		clock:                  clock,
 	}
 }
 
-func (s *organizationService) CreateOrganization(
+func (s *OrganizationService) CreateOrganization(
 	ctx context.Context,
 	req *protoMessages.CreateOrganizationRequest,
 ) (*protoMessages.CreateOrganizationResponse, error) {
-	userId := grpcUtils.UserIDFromIncomingContext(ctx)
+	userID := grpcUtils.UserIDFromIncomingContext(ctx)
 	organization := schema.Organization{
 		ID:        uuid.NewString(),
 		Name:      req.Name,
 		Slug:      req.Slug,
 		CreatedAt: s.clock.Now(),
-		CreatedBy: userId,
+		CreatedBy: userID,
 	}
 
 	err := s.organizationRepository.Create(ctx, &organization)
@@ -51,25 +51,25 @@ func (s *organizationService) CreateOrganization(
 	return &protoMessages.CreateOrganizationResponse{Organization: organizationToResponse(&organization)}, nil
 }
 
-func (s *organizationService) ListMeOrganizationMemberships(
+func (s *OrganizationService) ListMeOrganizationMemberships(
 	ctx context.Context,
-	req *protoMessages.ListMeOrganizationMembershipsRequest,
+	_ *protoMessages.ListMeOrganizationMembershipsRequest,
 ) (*protoMessages.ListMeOrganizationMembershipsResponse, error) {
-	userId := grpcUtils.UserIDFromIncomingContext(ctx)
-	memberships, err := s.organizationRepository.ListOrganizationMembershipsByUserId(ctx, userId)
+	userID := grpcUtils.UserIDFromIncomingContext(ctx)
+	memberships, err := s.organizationRepository.ListOrganizationMembershipsByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
 	response := make([]*protoMessages.OrganizationMembership, len(memberships))
-	for i, m := range memberships {
+	for i, membership := range memberships {
 		response[i] = &protoMessages.OrganizationMembership{
 			Organization: &protoMessages.ShortOrganization{
-				Id:   m.Organization.ID,
-				Slug: m.Organization.Slug,
+				Id:   membership.Organization.ID,
+				Slug: membership.Organization.Slug,
 			},
-			Role:      roles.GetRoleProto(m.RoleID),
-			CreatedAt: timestamppb.New(m.CreatedAt),
+			Role:      roles.GetRoleProto(membership.RoleID),
+			CreatedAt: timestamppb.New(membership.CreatedAt),
 		}
 	}
 

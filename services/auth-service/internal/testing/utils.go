@@ -12,12 +12,15 @@ import (
 	grpcUtils "github.com/FreibergVlad/url-shortener/shared/go/pkg/api/grpc/utils"
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+const fakePasswordLength = 10
 
 func CreateTestUserRequest() *userServiceMessages.CreateUserRequest {
 	return &userServiceMessages.CreateUserRequest{
 		Email:    gofakeit.Email(),
-		Password: gofakeit.Password(true, true, true, true, true, 10),
+		Password: gofakeit.Password(true, true, true, true, true, fakePasswordLength),
 	}
 }
 
@@ -30,29 +33,35 @@ func CreateTestOrganizationRequest() *organizationServiceMessages.CreateOrganiza
 	}
 }
 
-func CreateTestOrganization(server *TestingServer, userId string, t *testing.T) *organizationServiceMessages.Organization {
+func CreateTestOrganization(
+	t *testing.T, server *Server, userID string,
+) *organizationServiceMessages.Organization {
+	t.Helper()
+
 	request := CreateTestOrganizationRequest()
-	ctx := grpcUtils.OutgoingContextWithUserID(context.Background(), userId)
+	ctx := grpcUtils.OutgoingContextWithUserID(context.Background(), userID)
 
 	response, err := server.OrganizationServiceClient.CreateOrganization(ctx, request)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, request.Name, response.Organization.Name)
 	assert.Equal(t, request.Slug, response.Organization.Slug)
-	assert.Equal(t, userId, response.Organization.CreatedBy)
+	assert.Equal(t, userID, response.Organization.CreatedBy)
 
 	return response.Organization
 }
 
-func CreateTestUser(server *TestingServer, t *testing.T) *userServiceMessages.User {
+func CreateTestUser(t *testing.T, server *Server) *userServiceMessages.User {
+	t.Helper()
+
 	request := CreateTestUserRequest()
 	response, err := server.UserServiceClient.CreateUser(context.Background(), request)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, request.Email, response.User.Email)
-	assert.Equal(t, roles.RoleIdProvisional, response.User.Role.Id)
+	assert.Equal(t, roles.RoleIDProvisional, response.User.Role.Id)
 	assert.Equal(t, roles.RoleProvisional.Description, response.User.Role.Description)
 
 	return response.User

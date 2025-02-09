@@ -15,28 +15,34 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-type userService struct {
+const bcryptCost = 10
+
+type UserService struct {
 	protoService.UnimplementedUserServiceServer
 	userRepository users.Repository
 	clock          clock.Clock
 }
 
-func New(userRepository users.Repository, clock clock.Clock) *userService {
-	return &userService{userRepository: userRepository, clock: clock}
+func New(userRepository users.Repository, clock clock.Clock) *UserService {
+	return &UserService{userRepository: userRepository, clock: clock}
 }
 
-func (s *userService) CreateUser(ctx context.Context, req *protoMessages.CreateUserRequest) (*protoMessages.CreateUserResponse, error) {
-	passHash, err := bcrypt.GenerateFromPassword([]byte(req.Password), 10)
+func (s *UserService) CreateUser(
+	ctx context.Context, req *protoMessages.CreateUserRequest,
+) (*protoMessages.CreateUserResponse, error) {
+	passHash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcryptCost)
 	if err != nil {
 		return nil, err
 	}
+
 	user := schema.User{
 		ID:           uuid.NewString(),
 		Email:        req.Email,
 		PasswordHash: string(passHash),
-		RoleID:       roles.RoleIdProvisional,
+		RoleID:       roles.RoleIDProvisional,
 		CreatedAt:    s.clock.Now(),
 	}
+
 	err = s.userRepository.Create(ctx, &user)
 	if err != nil {
 		return nil, err
@@ -45,9 +51,11 @@ func (s *userService) CreateUser(ctx context.Context, req *protoMessages.CreateU
 	return &protoMessages.CreateUserResponse{User: userToResponse(&user)}, nil
 }
 
-func (s *userService) GetMe(ctx context.Context, req *protoMessages.GetMeRequest) (*protoMessages.GetMeResponse, error) {
-	userId := grpcUtils.UserIDFromIncomingContext(ctx)
-	user, err := s.userRepository.GetById(ctx, userId)
+func (s *UserService) GetMe(
+	ctx context.Context, _ *protoMessages.GetMeRequest,
+) (*protoMessages.GetMeResponse, error) {
+	userID := grpcUtils.UserIDFromIncomingContext(ctx)
+	user, err := s.userRepository.GetByID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}

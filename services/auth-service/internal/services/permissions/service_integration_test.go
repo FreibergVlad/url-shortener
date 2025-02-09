@@ -10,6 +10,7 @@ import (
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/testing/integration"
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestHasPermissionsWhenUnauthenticated_Integration(t *testing.T) {
@@ -50,16 +51,15 @@ func TestHasPermissionsWhenGlobalRoleMatches_Integration(t *testing.T) {
 	server, teardown := testUtils.BootstrapServer()
 	defer teardown()
 
-	user := testUtils.CreateTestUser(server, t)
+	user := testUtils.CreateTestUser(t, server)
 	scopes := []string{"me:read"}
 	request := &permissionServiceMessages.HasPermissionsRequest{Scopes: scopes}
 	ctx := grpcUtils.OutgoingContextWithUserID(context.Background(), user.Id)
 
 	response, err := server.PermissionServiceClient.HasPermissions(ctx, request)
 
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err)
+
 	assert.True(t, response.HasPermissions)
 }
 
@@ -70,16 +70,15 @@ func TestHasPermissionsWhenHasNoPermissions_Integration(t *testing.T) {
 	server, teardown := testUtils.BootstrapServer()
 	defer teardown()
 
-	user := testUtils.CreateTestUser(server, t)
+	user := testUtils.CreateTestUser(t, server)
 	scopes := []string{"short-url:read"}
 	request := &permissionServiceMessages.HasPermissionsRequest{Scopes: scopes}
 	ctx := grpcUtils.OutgoingContextWithUserID(context.Background(), user.Id)
 
 	response, err := server.PermissionServiceClient.HasPermissions(ctx, request)
 
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err)
+
 	assert.False(t, response.HasPermissions)
 }
 
@@ -90,8 +89,8 @@ func TestHasPermissionsWhenOrganizationRoleMatches_Integration(t *testing.T) {
 	server, teardown := testUtils.BootstrapServer()
 	defer teardown()
 
-	user := testUtils.CreateTestUser(server, t)
-	organization := testUtils.CreateTestOrganization(server, user.Id, t)
+	user := testUtils.CreateTestUser(t, server)
+	organization := testUtils.CreateTestOrganization(t, server, user.Id)
 	scopes := []string{"short-url:read"}
 	request := &permissionServiceMessages.HasPermissionsRequest{
 		Scopes:              scopes,
@@ -101,8 +100,7 @@ func TestHasPermissionsWhenOrganizationRoleMatches_Integration(t *testing.T) {
 
 	response, err := server.PermissionServiceClient.HasPermissions(ctx, request)
 
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err)
+
 	assert.True(t, response.HasPermissions)
 }

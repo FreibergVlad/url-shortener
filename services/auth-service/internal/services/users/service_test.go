@@ -16,6 +16,7 @@ import (
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -33,7 +34,8 @@ func TestCreateUser(t *testing.T) {
 
 	response, err := userService.CreateUser(ctx, request)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
+
 	assert.Equal(t, request.Email, response.User.Email)
 	assert.Equal(t, timestamppb.New(fixedTime), response.User.CreatedAt)
 	assert.Equal(t, roles.RoleProvisional.ID, response.User.Role.Id)
@@ -55,8 +57,9 @@ func TestCreateUserWhenPasswordHashingError(t *testing.T) {
 
 	response, err := userService.CreateUser(ctx, &request)
 
+	require.ErrorIs(t, err, bcrypt.ErrPasswordTooLong)
+
 	assert.Nil(t, response)
-	assert.ErrorIs(t, err, bcrypt.ErrPasswordTooLong)
 
 	userRepo.AssertExpectations(t)
 }
@@ -72,8 +75,9 @@ func TestCreateUserWhenDatabaseError(t *testing.T) {
 
 	response, err := userService.CreateUser(ctx, testUtils.CreateTestUserRequest())
 
+	require.ErrorIs(t, err, errors.ErrDuplicateResource)
+
 	assert.Nil(t, response)
-	assert.ErrorIs(t, err, errors.ErrDuplicateResource)
 
 	userRepo.AssertExpectations(t)
 }
@@ -86,11 +90,12 @@ func TestGetMe(t *testing.T) {
 	user := schema.User{ID: gofakeit.UUID(), Email: gofakeit.Email()}
 	ctx := grpcUtils.IncomingContextWithUserID(context.Background(), user.ID)
 
-	userRepo.On("GetById", ctx, user.ID).Return(&user, nil)
+	userRepo.On("GetByID", ctx, user.ID).Return(&user, nil)
 
 	response, err := userService.GetMe(ctx, &userServiceMessages.GetMeRequest{})
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
+
 	assert.Equal(t, user.ID, response.User.Id)
 	assert.Equal(t, user.Email, response.User.Email)
 
@@ -102,15 +107,16 @@ func TestGetMeWhenDatabaseError(t *testing.T) {
 
 	userRepo := testUtils.MockedUserRepository{}
 	userService := users.New(&userRepo, clock.NewFixedClock(time.Now()))
-	userId := gofakeit.UUID()
-	ctx := grpcUtils.IncomingContextWithUserID(context.Background(), userId)
+	userID := gofakeit.UUID()
+	ctx := grpcUtils.IncomingContextWithUserID(context.Background(), userID)
 
-	userRepo.On("GetById", ctx, userId).Return(&schema.User{}, errors.ErrResourceNotFound)
+	userRepo.On("GetByID", ctx, userID).Return(&schema.User{}, errors.ErrResourceNotFound)
 
 	response, err := userService.GetMe(ctx, &userServiceMessages.GetMeRequest{})
 
+	require.ErrorIs(t, err, errors.ErrResourceNotFound)
+
 	assert.Nil(t, response)
-	assert.ErrorIs(t, err, errors.ErrResourceNotFound)
 
 	userRepo.AssertExpectations(t)
 }

@@ -2,12 +2,16 @@ syntax = "proto3";
 
 package permissions.messages.v1;
 
+import "buf/validate/validate.proto";
 import "google/protobuf/descriptor.proto";
 
 option go_package = "messages/v1";
 
 message OrganizationContext {
-  string organization_id = 1;
+  string organization_id = 1 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string.uuid = true
+  ];
 }
 
 message HasPermissionsRequest {

@@ -5,7 +5,6 @@ go 1.23.2
 require (
 	github.com/FreibergVlad/url-shortener/proto v0.0.0
 	github.com/FreibergVlad/url-shortener/shared/go v0.0.0
-	github.com/brianvoe/gofakeit v3.18.0+incompatible
 	github.com/brianvoe/gofakeit/v7 v7.1.2
 	github.com/go-redis/cache/v9 v9.0.0
 	github.com/golang-migrate/migrate/v4 v4.18.1

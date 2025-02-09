@@ -16,6 +16,7 @@ import (
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -24,22 +25,21 @@ func TestCreateOrganization(t *testing.T) {
 
 	organizationRepo := &testUtils.MockedOrganizationRepository{}
 	clock := clock.NewFixedClock(time.Now())
-	userId := gofakeit.UUID()
+	userID := gofakeit.UUID()
 	organizationService := organizations.New(organizationRepo, clock)
-	ctx, request := grpcUtils.IncomingContextWithUserID(context.Background(), userId), testUtils.CreateTestOrganizationRequest()
+	ctx := grpcUtils.IncomingContextWithUserID(context.Background(), userID)
+	request := testUtils.CreateTestOrganizationRequest()
 
 	organizationRepo.On("Create", ctx, mock.Anything).Return(nil)
 
 	response, err := organizationService.CreateOrganization(ctx, request)
 
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err)
 
 	assert.Equal(t, request.Name, response.Organization.Name)
 	assert.Equal(t, request.Slug, response.Organization.Slug)
 	assert.Equal(t, timestamppb.New(clock.Now()), response.Organization.CreatedAt)
-	assert.Equal(t, userId, response.Organization.CreatedBy)
+	assert.Equal(t, userID, response.Organization.CreatedBy)
 
 	organizationRepo.AssertExpectations(t)
 }
@@ -49,14 +49,16 @@ func TestCreateOrganizationWhenDatabaseError(t *testing.T) {
 
 	organizationRepo := &testUtils.MockedOrganizationRepository{}
 	organizationService := organizations.New(organizationRepo, clock.NewFixedClock(time.Now()))
-	ctx, request := grpcUtils.IncomingContextWithUserID(context.Background(), gofakeit.UUID()), testUtils.CreateTestOrganizationRequest()
+	ctx := grpcUtils.IncomingContextWithUserID(context.Background(), gofakeit.UUID())
+	request := testUtils.CreateTestOrganizationRequest()
 
 	organizationRepo.On("Create", ctx, mock.Anything).Return(errors.ErrDuplicateResource)
 
 	response, err := organizationService.CreateOrganization(ctx, request)
 
+	require.ErrorIs(t, err, errors.ErrDuplicateResource)
+
 	assert.Nil(t, response)
-	assert.ErrorIs(t, err, errors.ErrDuplicateResource)
 
 	organizationRepo.AssertExpectations(t)
 }
@@ -66,30 +68,28 @@ func TestListMeOrganizationMemberships(t *testing.T) {
 
 	organizationRepo := &testUtils.MockedOrganizationRepository{}
 	clock := clock.NewFixedClock(time.Now())
-	userId := gofakeit.UUID()
+	userID := gofakeit.UUID()
 	organizationService := organizations.New(organizationRepo, clock)
-	ctx := grpcUtils.IncomingContextWithUserID(context.Background(), userId)
+	ctx := grpcUtils.IncomingContextWithUserID(context.Background(), userID)
 	request := &organizationServiceMessages.ListMeOrganizationMembershipsRequest{}
 	membership := schema.OrganizationMembership{
 		Organization: schema.ShortOrganization{
 			ID:   gofakeit.UUID(),
 			Slug: gofakeit.Company(),
 		},
-		RoleID:    roles.RoleIdMember,
+		RoleID:    roles.RoleIDMember,
 		CreatedAt: clock.Now(),
 	}
 
 	organizationRepo.
-		On("ListOrganizationMembershipsByUserId", ctx, userId).
+		On("ListOrganizationMembershipsByUserID", ctx, userID).
 		Return(schema.OrganizationMemberships{&membership}, nil)
 
 	response, err := organizationService.ListMeOrganizationMemberships(ctx, request)
 
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err)
 
-	assert.Equal(t, 1, len(response.Data))
+	assert.Len(t, response.Data, 1)
 
 	responseMembership := response.Data[0]
 	assert.Equal(t, membership.Organization.ID, responseMembership.Organization.Id)
@@ -107,19 +107,20 @@ func TestListMeOrganizationMembershipsWhenDatabaseError(t *testing.T) {
 
 	organizationRepo := &testUtils.MockedOrganizationRepository{}
 	clock := clock.NewFixedClock(time.Now())
-	userId := gofakeit.UUID()
+	userID := gofakeit.UUID()
 	organizationService := organizations.New(organizationRepo, clock)
-	ctx := grpcUtils.IncomingContextWithUserID(context.Background(), userId)
+	ctx := grpcUtils.IncomingContextWithUserID(context.Background(), userID)
 	request := &organizationServiceMessages.ListMeOrganizationMembershipsRequest{}
 
 	organizationRepo.
-		On("ListOrganizationMembershipsByUserId", ctx, userId).
+		On("ListOrganizationMembershipsByUserID", ctx, userID).
 		Return(schema.OrganizationMemberships{}, errors.ErrResourceNotFound)
 
 	response, err := organizationService.ListMeOrganizationMemberships(ctx, request)
 
+	require.ErrorIs(t, err, errors.ErrResourceNotFound)
+
 	assert.Nil(t, response)
-	assert.ErrorIs(t, err, errors.ErrResourceNotFound)
 
 	organizationRepo.AssertExpectations(t)
 }

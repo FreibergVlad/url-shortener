@@ -10,19 +10,19 @@ import (
 
 type Repository interface {
 	Create(ctx context.Context, invitation *schema.Invitation) error
-	GetById(ctx context.Context, id string) (*schema.Invitation, error)
-	UpdateStatusById(ctx context.Context, id, status string) error
+	GetByID(ctx context.Context, id string) (*schema.Invitation, error)
+	UpdateStatusByID(ctx context.Context, id, status string) error
 }
 
-type invitationRepository struct {
+type PostgresRepository struct {
 	db gen.DBTX
 }
 
-func NewInvitationRepository(db gen.DBTX) *invitationRepository {
-	return &invitationRepository{db: db}
+func NewInvitationRepository(db gen.DBTX) *PostgresRepository {
+	return &PostgresRepository{db: db}
 }
 
-func (r *invitationRepository) Create(ctx context.Context, invitation *schema.Invitation) error {
+func (r *PostgresRepository) Create(ctx context.Context, invitation *schema.Invitation) error {
 	querier := gen.New(r.db)
 	params := gen.CreateInvitationParams{
 		ID:             repositories.MustPgUUIDFromString(invitation.ID),
@@ -38,7 +38,7 @@ func (r *invitationRepository) Create(ctx context.Context, invitation *schema.In
 	return repositories.TranslatePgError(querier.CreateInvitation(ctx, params))
 }
 
-func (r *invitationRepository) GetById(ctx context.Context, id string) (*schema.Invitation, error) {
+func (r *PostgresRepository) GetByID(ctx context.Context, id string) (*schema.Invitation, error) {
 	querier := gen.New(r.db)
 
 	row, err := querier.GetInvitationById(ctx, repositories.MustPgUUIDFromString(id))
@@ -58,7 +58,7 @@ func (r *invitationRepository) GetById(ctx context.Context, id string) (*schema.
 	}, nil
 }
 
-func (r *invitationRepository) UpdateStatusById(ctx context.Context, id, status string) error {
+func (r *PostgresRepository) UpdateStatusByID(ctx context.Context, id, status string) error {
 	querier := gen.New(r.db)
 	params := gen.UpdateInvitationStatusByIdParams{
 		ID:     repositories.MustPgUUIDFromString(id),
