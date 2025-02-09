@@ -8,8 +8,8 @@ type Config struct {
 	JWTSecret                    string `env:"JWT_SECRET,notEmpty"`
 	AuthServiceDSN               string `env:"AUTH_SERVICE_DSN,notEmpty"`
 	DomainServiceDSN             string `env:"DOMAIN_SERVICE_DSN,notEmpty"`
-	ShortUrlManagementServiceDSN string `env:"SHORT_URL_MANAGEMENT_SERVICE_DSN,notEmpty"`
-	ShortUrlGeneratorServiceDSN  string `env:"SHORT_URL_GENERATOR_SERVICE_DSN,notEmpty"`
+	ShortURLManagementServiceDSN string `env:"SHORT_URL_MANAGEMENT_SERVICE_DSN,notEmpty"`
+	ShortURLGeneratorServiceDSN  string `env:"SHORT_URL_GENERATOR_SERVICE_DSN,notEmpty"`
 }
 
 func New() Config {

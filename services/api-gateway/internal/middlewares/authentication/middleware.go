@@ -14,21 +14,30 @@ func New(
 	next http.Handler,
 	jwtSecret string,
 	mux *runtime.ServeMux,
-	ctxUserIdKey any,
+	ctxUserIDKey any,
 ) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authHeader := r.Header.Get("Authorization")
+	return http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+		authHeader := request.Header.Get("Authorization")
 		if authHeader == "" {
-			next.ServeHTTP(w, r)
+			next.ServeHTTP(responseWriter, request)
 			return
 		}
 
-		userId, err := jwt.VerifyAndParseUserId(strings.TrimPrefix(authHeader, "Bearer "), jwtSecret)
-		if err != nil || userId == "" {
-			runtime.HTTPError(r.Context(), mux, &runtime.JSONPb{}, w, r, errors.NewUnauthenticatedError("unauthenticated"))
+		userID, err := jwt.VerifyAndParseUserId(strings.TrimPrefix(authHeader, "Bearer "), jwtSecret)
+		if err != nil || userID == "" {
+			runtime.HTTPError(
+				request.Context(),
+				mux,
+				&runtime.JSONPb{},
+				responseWriter,
+				request,
+				errors.NewUnauthenticatedError("unauthenticated"),
+			)
 			return
 		}
 
-		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), ctxUserIdKey, userId)))
+		context := context.WithValue(request.Context(), ctxUserIDKey, userID)
+
+		next.ServeHTTP(responseWriter, request.WithContext(context))
 	})
 }

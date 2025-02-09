@@ -24,7 +24,7 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-type ctxUserIdKey struct{}
+type ctxUserIDKey struct{}
 
 func main() {
 	config := config.New()
@@ -33,9 +33,9 @@ func main() {
 	zerolog.SetGlobalLevel(logLevel)
 
 	// extract user ID from context and pass it to all GRPC requests downstream
-	mux := runtime.NewServeMux(runtime.WithMetadata(func(ctx context.Context, r *http.Request) metadata.MD {
-		if userId, ok := ctx.Value(ctxUserIdKey{}).(string); ok {
-			return grpcUtils.UserIdMetadata(userId)
+	mux := runtime.NewServeMux(runtime.WithMetadata(func(ctx context.Context, _ *http.Request) metadata.MD {
+		if userID, ok := ctx.Value(ctxUserIDKey{}).(string); ok {
+			return grpcUtils.UserIdMetadata(userID)
 		}
 		return metadata.MD{}
 	}))
@@ -46,17 +46,28 @@ func main() {
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	must.Do(userServiceProto.RegisterUserServiceHandlerFromEndpoint(ctx, mux, config.AuthServiceDSN, opts))
 	must.Do(tokenServiceProto.RegisterTokenServiceHandlerFromEndpoint(ctx, mux, config.AuthServiceDSN, opts))
-	must.Do(organizationServiceProto.RegisterOrganizationServiceHandlerFromEndpoint(ctx, mux, config.AuthServiceDSN, opts))
+	must.Do(
+		organizationServiceProto.RegisterOrganizationServiceHandlerFromEndpoint(ctx, mux, config.AuthServiceDSN, opts),
+	)
 	must.Do(invitationServiceProto.RegisterInvitationServiceHandlerFromEndpoint(ctx, mux, config.AuthServiceDSN, opts))
 	must.Do(domainServiceProto.RegisterDomainServiceHandlerFromEndpoint(ctx, mux, config.DomainServiceDSN, opts))
-	must.Do(shortUrlManagementServiceProto.RegisterShortURLManagementServiceHandlerFromEndpoint(ctx, mux, config.ShortUrlManagementServiceDSN, opts))
-	must.Do(shortUrlGeneratorServiceProto.RegisterShortURLGeneratorServiceHandlerFromEndpoint(ctx, mux, config.ShortUrlGeneratorServiceDSN, opts))
+	must.Do(
+		shortUrlManagementServiceProto.RegisterShortURLManagementServiceHandlerFromEndpoint(
+			ctx, mux, config.ShortURLManagementServiceDSN, opts,
+		),
+	)
+	must.Do(
+		shortUrlGeneratorServiceProto.RegisterShortURLGeneratorServiceHandlerFromEndpoint(
+			ctx, mux, config.ShortURLGeneratorServiceDSN, opts,
+		),
+	)
 
-	handler := authentication.New(mux, config.JWTSecret, mux, ctxUserIdKey{})
+	handler := authentication.New(mux, config.JWTSecret, mux, ctxUserIDKey{})
 
 	server := httpWithGracefulShutdown.NewServer(&http.Server{
-		Addr:    fmt.Sprintf(":%d", config.Port),
-		Handler: handler,
+		Addr:              fmt.Sprintf(":%d", config.Port),
+		Handler:           handler,
+		ReadHeaderTimeout: httpWithGracefulShutdown.ReadHeaderTimeout,
 	})
 	server.Run()
 }

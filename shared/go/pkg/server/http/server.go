@@ -12,7 +12,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-const ShutdownTimeout = 5 * time.Second
+const (
+	ShutdownTimeout   = 5 * time.Second
+	ReadHeaderTimeout = 30 * time.Second
+)
 
 type HttpServer interface {
 	ListenAndServe() error
