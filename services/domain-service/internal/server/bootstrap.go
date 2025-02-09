@@ -37,7 +37,10 @@ func Bootstrap(
 			grpcValidationMiddleware.New(),
 			grpcAuthorizationMiddleware.New(
 				map[string]protoreflect.ServiceDescriptor{
-					"DomainService": domainServiceProto.File_domains_service_v1_service_proto.Services().ByName(protoreflect.Name("DomainService")),
+					"DomainService": domainServiceProto.
+						File_domains_service_v1_service_proto.
+						Services().
+						ByName(protoreflect.Name("DomainService")),
 				},
 				permissions.NewPermissionResolver(permissionServiceClient),
 			),

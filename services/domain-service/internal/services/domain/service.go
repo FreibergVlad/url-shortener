@@ -8,25 +8,26 @@ import (
 	protoService "github.com/FreibergVlad/url-shortener/proto/pkg/domains/service/v1"
 )
 
-type domainService struct {
+type Service struct {
 	protoService.UnimplementedDomainServiceServer
 	config config.Config
 }
 
-func New(config config.Config) *domainService {
-	return &domainService{config: config}
+func New(config config.Config) *Service {
+	return &Service{config: config}
 }
 
-func (s *domainService) ListOrganizationDomain(
-	ctx context.Context,
-	req *protoMessages.ListOrganizationDomainRequest,
+func (s *Service) ListOrganizationDomain(
+	_ context.Context,
+	_ *protoMessages.ListOrganizationDomainRequest,
 ) (*protoMessages.ListOrganizationDomainResponse, error) {
-	var domains []*protoMessages.Domain
-	for _, publicDomain := range s.config.PublicDomains {
-		domains = append(domains, &protoMessages.Domain{Fqdn: publicDomain})
+	domains := make([]*protoMessages.Domain, len(s.config.PublicDomains))
+	for i, publicDomain := range s.config.PublicDomains {
+		domains[i] = &protoMessages.Domain{Fqdn: publicDomain}
 	}
+
 	return &protoMessages.ListOrganizationDomainResponse{
 		Data:  domains,
-		Total: int32(len(s.config.PublicDomains)),
+		Total: int64(len(s.config.PublicDomains)),
 	}, nil
 }

@@ -7,5 +7,8 @@ import "buf/validate/validate.proto";
 option go_package = "messages/v1";
 
 message ListOrganizationDomainRequest {
-  string organization_id = 1 [(buf.validate.field).required = true];
+  string organization_id = 1 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string.uuid = true
+  ];
 }

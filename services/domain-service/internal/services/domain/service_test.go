@@ -9,6 +9,7 @@ import (
 	protoMessages "github.com/FreibergVlad/url-shortener/proto/pkg/domains/messages/v1"
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestListOrganizationDomain(t *testing.T) {
@@ -21,7 +22,8 @@ func TestListOrganizationDomain(t *testing.T) {
 
 	response, err := domainService.ListOrganizationDomain(context.TODO(), &request)
 
-	assert.NoError(t, err)
-	assert.Equal(t, int32(1), response.Total)
+	require.NoError(t, err)
+
+	assert.Equal(t, int64(1), response.Total)
 	assert.Equal(t, []*protoMessages.Domain{{Fqdn: fqdn}}, response.Data)
 }

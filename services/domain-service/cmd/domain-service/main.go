@@ -15,7 +15,8 @@ import (
 func main() {
 	config := config.New()
 
-	permissionServiceConn := must.Return(grpc.NewClient(config.AuthServiceDSN, grpc.WithTransportCredentials(insecure.NewCredentials())))
+	grpcOptions := grpc.WithTransportCredentials(insecure.NewCredentials())
+	permissionServiceConn := must.Return(grpc.NewClient(config.AuthServiceDSN, grpcOptions))
 	permissionServiceClient := permissionServiceProto.NewPermissionServiceClient(permissionServiceConn)
 
 	listener := must.Return(net.Listen("tcp", fmt.Sprintf(":%d", config.Port)))
