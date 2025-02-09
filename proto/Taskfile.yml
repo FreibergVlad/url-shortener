@@ -5,3 +5,7 @@ tasks:
     cmds:
       - buf generate
     dir: '{{.TASKFILE_DIR}}'
+  lint:
+    cmds:
+      - buf lint
+    dir: '{{.TASKFILE_DIR}}'
