@@ -6,7 +6,7 @@ type Config struct {
 	Port                         int    `env:"PORT,notEmpty"`
 	LogLevel                     string `env:"LOG_LEVEL" envDefault:"error"`
 	Domain                       string `env:"DOMAIN,notEmpty"`
-	ShortUrlManagementServiceDSN string `env:"SHORT_URL_MANAGEMENT_SERVICE_DSN,notEmpty"`
+	ShortURLManagementServiceDSN string `env:"SHORT_URL_MANAGEMENT_SERVICE_DSN,notEmpty"`
 }
 
 func New() Config {

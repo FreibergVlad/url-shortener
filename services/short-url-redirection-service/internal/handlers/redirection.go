@@ -1,10 +1,11 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 
-	protoMessages "github.com/FreibergVlad/url-shortener/proto/pkg/shorturl/management/messages/v1"
-	protoService "github.com/FreibergVlad/url-shortener/proto/pkg/shorturl/management/service/v1"
+	protoMessages "github.com/FreibergVlad/url-shortener/proto/pkg/shorturls/management/messages/v1"
+	protoService "github.com/FreibergVlad/url-shortener/proto/pkg/shorturls/management/service/v1"
 	"github.com/FreibergVlad/url-shortener/url-redirection-service/internal/config"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"
@@ -12,38 +13,50 @@ import (
 )
 
 type RedirectionHandler struct {
-	shortUrlManagementServiceClient protoService.ShortURLManagementServiceClient
+	shortURLManagementServiceClient protoService.ShortURLManagementServiceClient
 	config                          config.Config
 }
 
 func NewRedirectionHandler(
-	shortUrlServiceManagementClient protoService.ShortURLManagementServiceClient,
+	shortURLServiceManagementClient protoService.ShortURLManagementServiceClient,
 	config config.Config,
 ) *RedirectionHandler {
-	return &RedirectionHandler{shortUrlManagementServiceClient: shortUrlServiceManagementClient, config: config}
+	return &RedirectionHandler{shortURLManagementServiceClient: shortURLServiceManagementClient, config: config}
 }
 
-func (h *RedirectionHandler) HandleRedirect(w http.ResponseWriter, r *http.Request) {
-	alias := r.PathValue("alias")
-	req := protoMessages.GetShortURLRequest{Alias: alias, Domain: h.config.Domain}
-	resp, err := h.shortUrlManagementServiceClient.GetShortURL(r.Context(), &req)
+func (h *RedirectionHandler) HandleRedirect(httpRespWriter http.ResponseWriter, httpReq *http.Request) {
+	alias := httpReq.PathValue("alias")
+	if alias == "" {
+		http.NotFound(httpRespWriter, httpReq)
+		return
+	}
+
+	redirectURL, err := h.getRedirectURL(httpReq.Context(), alias)
 	if err != nil {
-		h.handleShortURLLookupError(w, r, err)
+		h.handleURLLookupErr(httpRespWriter, httpReq, err)
 		return
 	}
-	if resp.ShortUrl.Status != protoMessages.ShortURLStatus_SHORT_URL_STATUS_ACTIVE {
-		http.NotFound(w, r)
-		return
-	}
-	http.Redirect(w, r, resp.ShortUrl.LongUrl.Assembled, http.StatusMovedPermanently)
+
+	http.Redirect(httpRespWriter, httpReq, redirectURL, http.StatusMovedPermanently)
 }
 
-func (h *RedirectionHandler) handleShortURLLookupError(w http.ResponseWriter, r *http.Request, err error) {
+func (h *RedirectionHandler) handleURLLookupErr(httpRespWriter http.ResponseWriter, httpReq *http.Request, err error) {
 	status, ok := status.FromError(err)
 	if !ok || status.Code() != codes.NotFound {
 		log.Error().Err(err).Msg("Error while looking for a short URL")
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(httpRespWriter, "Internal Server Error", http.StatusInternalServerError)
 	} else {
-		http.NotFound(w, r)
+		http.NotFound(httpRespWriter, httpReq)
 	}
+}
+
+func (h *RedirectionHandler) getRedirectURL(ctx context.Context, alias string) (string, error) {
+	request := protoMessages.GetShortURLRequest{Alias: alias, Domain: h.config.Domain}
+
+	response, err := h.shortURLManagementServiceClient.GetShortURL(ctx, &request)
+	if err != nil {
+		return "", err
+	}
+
+	return response.ShortUrl.LongUrl.Assembled, nil
 }

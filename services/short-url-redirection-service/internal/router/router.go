@@ -3,18 +3,18 @@ package router
 import (
 	"net/http"
 
-	protoService "github.com/FreibergVlad/url-shortener/proto/pkg/shorturl/management/service/v1"
+	protoService "github.com/FreibergVlad/url-shortener/proto/pkg/shorturls/management/service/v1"
 	"github.com/FreibergVlad/url-shortener/url-redirection-service/internal/config"
 	"github.com/FreibergVlad/url-shortener/url-redirection-service/internal/handlers"
 )
 
-type router struct {
+type Router struct {
 	*http.ServeMux
 }
 
-func New(shortUrlManagementServiceClient protoService.ShortURLManagementServiceClient, config config.Config) *router {
-	router := &router{ServeMux: http.NewServeMux()}
-	redirectionHandler := handlers.NewRedirectionHandler(shortUrlManagementServiceClient, config)
+func New(shortURLManagementServiceClient protoService.ShortURLManagementServiceClient, config config.Config) *Router {
+	router := &Router{ServeMux: http.NewServeMux()}
+	redirectionHandler := handlers.NewRedirectionHandler(shortURLManagementServiceClient, config)
 
 	router.HandleFunc("GET /{alias}", redirectionHandler.HandleRedirect)
 
