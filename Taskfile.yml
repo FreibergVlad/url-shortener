@@ -1,16 +1,33 @@
 version: '3'
 
 includes:
-  domain-service: ./services/domain-service
+  api-gateway: ./services/api-gateway
   auth-service: ./services/auth-service
+  domain-service: ./services/domain-service
+  short-url-management-service: ./services/short-url-management-service
+  short-url-redirection-service: ./services/short-url-redirection-service
+  shared-go: ./shared/go
   proto: ./proto
 
 tasks:
   run-all-tests:
     cmds:
-      - task domain-service:run-all-tests
       - task auth-service:run-all-tests
+      - task domain-service:run-all-tests
+      - task short-url-management-service:run-all-tests
+      - task shared-go:run-unit-tests
   run-unit-tests:
     cmds:
-      - task domain-service:run-unit-tests
       - task auth-service:run-unit-tests
+      - task domain-service:run-unit-tests
+      - task short-url-management-service:run-unit-tests
+      - task shared-go:run-unit-tests
+  lint:
+    cmds:
+      - task api-gateway:lint
+      - task auth-service:lint
+      - task domain-service:lint
+      - task short-url-management-service:lint
+      - task short-url-redirection-service:lint
+      - task shared-go:lint
+      - task proto:lint
