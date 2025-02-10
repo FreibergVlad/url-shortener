@@ -13,7 +13,7 @@ func New() grpc.UnaryServerInterceptor {
 	return middleware
 }
 
-func middleware(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
+func middleware(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 	protoReq, ok := req.(proto.Message)
 	if !ok {
 		return nil, errors.NewValidationError("invalid request: not a google.golang.org/protobuf/proto.Message")

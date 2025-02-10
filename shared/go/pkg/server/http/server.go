@@ -17,29 +17,29 @@ const (
 	ReadHeaderTimeout = 30 * time.Second
 )
 
-type HttpServer interface {
+type Server interface {
 	ListenAndServe() error
 	Shutdown(ctx context.Context) error
 }
 
-type HttpServerWithGracefulShutdown struct {
-	HttpServer
+type ServerWithGracefulShutdown struct {
+	Server
 	Quit chan os.Signal
 }
 
-func NewServer(http HttpServer) *HttpServerWithGracefulShutdown {
-	return &HttpServerWithGracefulShutdown{
-		HttpServer: http,
-		Quit:       make(chan os.Signal, 1),
+func NewServer(http Server) *ServerWithGracefulShutdown {
+	return &ServerWithGracefulShutdown{
+		Server: http,
+		Quit:   make(chan os.Signal, 1),
 	}
 }
 
-func (s *HttpServerWithGracefulShutdown) Run() {
-	panic := make(chan error, 1)
+func (s *ServerWithGracefulShutdown) Run() {
+	panicChan := make(chan error, 1)
 
 	go func() {
 		if err := s.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			panic <- err
+			panicChan <- err
 		}
 	}()
 
@@ -48,7 +48,7 @@ func (s *HttpServerWithGracefulShutdown) Run() {
 	select {
 	case signal := <-s.Quit:
 		log.Info().Msgf("Shutdown signal '%s' received from OS", signal)
-	case err := <-panic:
+	case err := <-panicChan:
 		log.Panic().Err(err).Msg("Error running server")
 	}
 

@@ -110,7 +110,7 @@ func TestRefreshAuthenticationToken(t *testing.T) {
 	config := config.IdentityServiceConfig{}
 	userRepo := testUtils.MockedUserRepository{}
 	tokenService := tokens.New(config, &userRepo, clock.NewFixedClock(time.Now()))
-	refreshToken := must.Return(jwt.IssueForUserId(gofakeit.UUID(), "", time.Now(), 10))
+	refreshToken := must.Return(jwt.IssueForUserID(gofakeit.UUID(), "", time.Now(), 10))
 	request := tokenServiceMessages.RefreshAuthenticationTokenRequest{RefreshToken: refreshToken}
 
 	response, err := tokenService.RefreshAuthenticationToken(context.Background(), &request)

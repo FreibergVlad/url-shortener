@@ -1,0 +1,11 @@
+version: '3'
+
+tasks:
+  run-unit-tests:
+    cmds:
+      - go test ./... -short
+    dir: '{{.TASKFILE_DIR}}'
+  lint:
+    cmds:
+      - golangci-lint run
+    dir: '{{.TASKFILE_DIR}}'

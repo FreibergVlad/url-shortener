@@ -12,6 +12,8 @@ import (
 )
 
 func MaybeSkipIntegrationTest(t *testing.T) {
+	t.Helper()
+
 	if testing.Short() {
 		t.Skip("skipping integration test")
 	}
@@ -22,7 +24,7 @@ func BufnetGrpcClient(listener *bufconn.Listener) *grpc.ClientConn {
 		grpc.NewClient(
 			"passthrough://bufnet",
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
-			grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
+			grpc.WithContextDialer(func(_ context.Context, _ string) (net.Conn, error) {
 				return listener.Dial()
 			}),
 		),

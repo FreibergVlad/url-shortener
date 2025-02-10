@@ -14,26 +14,26 @@ import (
 
 const ShutdownTimeout = 5 * time.Second
 
-type GRPCServerWithGracefulShutdown struct {
+type ServerWithGracefulShutdown struct {
 	*grpc.Server
 	listener net.Listener
 	Quit     chan os.Signal
 }
 
-func NewServer(listener net.Listener, opt ...grpc.ServerOption) *GRPCServerWithGracefulShutdown {
-	return &GRPCServerWithGracefulShutdown{
+func NewServer(listener net.Listener, opt ...grpc.ServerOption) *ServerWithGracefulShutdown {
+	return &ServerWithGracefulShutdown{
 		grpc.NewServer(opt...),
 		listener,
 		make(chan os.Signal, 1),
 	}
 }
 
-func (s *GRPCServerWithGracefulShutdown) Run() {
-	panic := make(chan error, 1)
+func (s *ServerWithGracefulShutdown) Run() {
+	panicChan := make(chan error, 1)
 
 	go func() {
 		if err := s.Serve(s.listener); err != nil {
-			panic <- err
+			panicChan <- err
 		}
 	}()
 
@@ -42,7 +42,7 @@ func (s *GRPCServerWithGracefulShutdown) Run() {
 	select {
 	case signal := <-s.Quit:
 		log.Info().Msgf("Shutdown signal '%s' received from OS", signal)
-	case err := <-panic:
+	case err := <-panicChan:
 		log.Panic().Err(err).Msg("Error running server")
 	}
 

@@ -2,20 +2,21 @@ package redis
 
 import (
 	"context"
+	"errors"
 
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/cache"
 	redisCacheImpl "github.com/go-redis/cache/v9"
 )
 
-type redisCache[T any] struct {
+type Cache[T any] struct {
 	redis *redisCacheImpl.Cache
 }
 
-func New[T any](opts *redisCacheImpl.Options) *redisCache[T] {
-	return &redisCache[T]{redis: redisCacheImpl.New(opts)}
+func New[T any](opts *redisCacheImpl.Options) *Cache[T] {
+	return &Cache[T]{redis: redisCacheImpl.New(opts)}
 }
 
-func (c *redisCache[T]) Set(ctx context.Context, item *cache.Item[T]) error {
+func (c *Cache[T]) Set(ctx context.Context, item *cache.Item[T]) error {
 	return c.redis.Set(&redisCacheImpl.Item{
 		Ctx:   ctx,
 		Key:   item.Key,
@@ -24,10 +25,10 @@ func (c *redisCache[T]) Set(ctx context.Context, item *cache.Item[T]) error {
 	})
 }
 
-func (c *redisCache[T]) Get(ctx context.Context, key string) (*T, error) {
+func (c *Cache[T]) Get(ctx context.Context, key string) (*T, error) {
 	var value T
 	err := c.redis.Get(ctx, key, &value)
-	if err == redisCacheImpl.ErrCacheMiss {
+	if errors.Is(err, redisCacheImpl.ErrCacheMiss) {
 		return nil, cache.ErrCacheMiss
 	}
 	if err != nil {
@@ -36,6 +37,6 @@ func (c *redisCache[T]) Get(ctx context.Context, key string) (*T, error) {
 	return &value, err
 }
 
-func (c *redisCache[T]) Delete(ctx context.Context, key string) error {
+func (c *Cache[T]) Delete(ctx context.Context, key string) error {
 	return c.redis.Delete(ctx, key)
 }

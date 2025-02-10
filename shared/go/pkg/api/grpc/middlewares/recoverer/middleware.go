@@ -1,4 +1,4 @@
-package recover
+package recoverer
 
 import (
 	"context"
@@ -13,7 +13,10 @@ func New() grpc.UnaryServerInterceptor {
 	return middleware
 }
 
-func middleware(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
+//nolint:nonamedreturns
+func middleware(
+	ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler,
+) (resp any, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Error().Msgf("panic occurred: %s", string(debug.Stack()))

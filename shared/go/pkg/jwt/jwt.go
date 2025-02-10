@@ -7,20 +7,20 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func IssueForUserId(userId, secret string, issuedAt time.Time, lifetimeSeconds int) (string, error) {
+func IssueForUserID(userID, secret string, issuedAt time.Time, lifetimeSeconds int) (string, error) {
 	claims := jwt.RegisteredClaims{
-		Subject:   userId,
+		Subject:   userID,
 		IssuedAt:  jwt.NewNumericDate(issuedAt),
 		ExpiresAt: jwt.NewNumericDate(issuedAt.Add(time.Second * time.Duration(lifetimeSeconds))),
 	}
 	return jwt.NewWithClaims(jwt.SigningMethodHS512, claims).SignedString([]byte(secret))
 }
 
-func VerifyAndParseUserId(rawToken, secret string) (string, error) {
+func VerifyAndParseUserID(rawToken, secret string) (string, error) {
 	token, err := jwt.ParseWithClaims(
 		rawToken,
 		&jwt.RegisteredClaims{},
-		func(t *jwt.Token) (interface{}, error) { return []byte(secret), nil },
+		func(_ *jwt.Token) (interface{}, error) { return []byte(secret), nil },
 		jwt.WithValidMethods([]string{"HS512"}),
 		jwt.WithExpirationRequired(),
 	)

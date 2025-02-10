@@ -23,7 +23,7 @@ func New(
 			return
 		}
 
-		userID, err := jwt.VerifyAndParseUserId(strings.TrimPrefix(authHeader, "Bearer "), jwtSecret)
+		userID, err := jwt.VerifyAndParseUserID(strings.TrimPrefix(authHeader, "Bearer "), jwtSecret)
 		if err != nil || userID == "" {
 			runtime.HTTPError(
 				request.Context(),

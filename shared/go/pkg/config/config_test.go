@@ -17,8 +17,13 @@ type testConfig struct {
 }
 
 func TestParseConfigWithEnvFile(t *testing.T) {
-	envFile := must.Return(os.CreateTemp("", ".env"))
-	defer os.Remove(envFile.Name())
+	t.Parallel()
+
+	envFile := must.Return(os.CreateTemp(t.TempDir(), ".env"))
+	t.Cleanup(func() {
+		os.Remove(envFile.Name())
+	})
+
 	_ = must.Return(envFile.WriteString("KEY_1=key1\nKEY_2=2"))
 	must.Do(envFile.Close())
 
@@ -36,6 +41,8 @@ func TestParseConfigWithEnvFile(t *testing.T) {
 }
 
 func TestParseConfigWithEnvVars(t *testing.T) {
+	t.Parallel()
+
 	os.Setenv("KEY_1", "key1")
 	os.Setenv("KEY_2", "2")
 
@@ -51,6 +58,8 @@ func TestParseConfigWithEnvVars(t *testing.T) {
 }
 
 func TestParseConfigPanicsWhenRequiredFieldsMissing(t *testing.T) {
+	t.Parallel()
+
 	cfg := testConfig{}
 	assert.Panics(t, func() {
 		config.ParseConfig(&cfg)

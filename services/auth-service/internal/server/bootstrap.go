@@ -25,7 +25,7 @@ import (
 	userServiceProto "github.com/FreibergVlad/url-shortener/proto/pkg/users/service/v1"
 	grpcAuthorizationMiddleware "github.com/FreibergVlad/url-shortener/shared/go/pkg/api/grpc/middlewares/authorization"
 	grpcLoggingMiddleware "github.com/FreibergVlad/url-shortener/shared/go/pkg/api/grpc/middlewares/logging"
-	grpcRecoverMiddleware "github.com/FreibergVlad/url-shortener/shared/go/pkg/api/grpc/middlewares/recover"
+	grpcRecoverMiddleware "github.com/FreibergVlad/url-shortener/shared/go/pkg/api/grpc/middlewares/recoverer"
 	grpcValidationMiddleware "github.com/FreibergVlad/url-shortener/shared/go/pkg/api/grpc/middlewares/validation"
 	redisCache "github.com/FreibergVlad/url-shortener/shared/go/pkg/cache/redis"
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/clock"
@@ -59,7 +59,7 @@ func ensureAdminUserExists(userRepository users.Repository, config config.Identi
 
 func Bootstrap(
 	config config.IdentityServiceConfig, listener net.Listener,
-) (*grpcServer.GRPCServerWithGracefulShutdown, func()) {
+) (*grpcServer.ServerWithGracefulShutdown, func()) {
 	postgresConnPool := must.Return(pgxpool.New(context.TODO(), config.Postgres.DSN))
 
 	redisOptions := must.Return(redis.ParseURL(config.Redis.DSN))

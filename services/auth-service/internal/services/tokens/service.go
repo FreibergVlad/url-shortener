@@ -41,9 +41,9 @@ func (s *TokenService) IssueAuthenticationToken(
 		return nil, errors.NewPermissionDeniedError("invalid credentials")
 	}
 
-	token := must.Return(jwt.IssueForUserId(user.ID, s.config.JWT.Secret, s.clock.Now(), s.config.JWT.LifetimeSeconds))
+	token := must.Return(jwt.IssueForUserID(user.ID, s.config.JWT.Secret, s.clock.Now(), s.config.JWT.LifetimeSeconds))
 	refreshToken := must.Return(
-		jwt.IssueForUserId(user.ID, s.config.JWT.RefreshSecret, s.clock.Now(), s.config.JWT.RefreshLifetimeSeconds),
+		jwt.IssueForUserID(user.ID, s.config.JWT.RefreshSecret, s.clock.Now(), s.config.JWT.RefreshLifetimeSeconds),
 	)
 
 	return &protoMessages.IssueAuthenticationTokenResponse{Token: token, RefreshToken: refreshToken}, nil
@@ -52,12 +52,12 @@ func (s *TokenService) IssueAuthenticationToken(
 func (s *TokenService) RefreshAuthenticationToken(
 	_ context.Context, req *protoMessages.RefreshAuthenticationTokenRequest,
 ) (*protoMessages.RefreshAuthenticationTokenResponse, error) {
-	userID, err := jwt.VerifyAndParseUserId(req.RefreshToken, s.config.JWT.RefreshSecret)
+	userID, err := jwt.VerifyAndParseUserID(req.RefreshToken, s.config.JWT.RefreshSecret)
 	if err != nil {
 		return nil, errors.NewPermissionDeniedError("failed to refresh token: %s", err.Error())
 	}
 
-	token := must.Return(jwt.IssueForUserId(userID, s.config.JWT.Secret, s.clock.Now(), s.config.JWT.LifetimeSeconds))
+	token := must.Return(jwt.IssueForUserID(userID, s.config.JWT.Secret, s.clock.Now(), s.config.JWT.LifetimeSeconds))
 
 	return &protoMessages.RefreshAuthenticationTokenResponse{Token: token}, nil
 }

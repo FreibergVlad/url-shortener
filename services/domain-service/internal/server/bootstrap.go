@@ -9,7 +9,7 @@ import (
 	permissionServiceProto "github.com/FreibergVlad/url-shortener/proto/pkg/permissions/service/v1"
 	grpcAuthorizationMiddleware "github.com/FreibergVlad/url-shortener/shared/go/pkg/api/grpc/middlewares/authorization"
 	grpcLoggingMiddleware "github.com/FreibergVlad/url-shortener/shared/go/pkg/api/grpc/middlewares/logging"
-	grpcRecoverMiddleware "github.com/FreibergVlad/url-shortener/shared/go/pkg/api/grpc/middlewares/recover"
+	grpcRecoverMiddleware "github.com/FreibergVlad/url-shortener/shared/go/pkg/api/grpc/middlewares/recoverer"
 	grpcValidationMiddleware "github.com/FreibergVlad/url-shortener/shared/go/pkg/api/grpc/middlewares/validation"
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/must"
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/permissions"
@@ -23,7 +23,7 @@ func Bootstrap(
 	listener net.Listener,
 	permissionServiceClient permissionServiceProto.PermissionServiceClient,
 	config config.Config,
-) *grpcServer.GRPCServerWithGracefulShutdown {
+) *grpcServer.ServerWithGracefulShutdown {
 	logLevel := must.Return(zerolog.ParseLevel(config.LogLevel))
 	zerolog.SetGlobalLevel(logLevel)
 

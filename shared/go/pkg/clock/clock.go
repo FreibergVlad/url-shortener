@@ -6,24 +6,24 @@ type Clock interface {
 	Now() time.Time
 }
 
-type systemClock struct{}
+type SystemClock struct{}
 
-func NewSystemClock() *systemClock {
-	return &systemClock{}
+func NewSystemClock() *SystemClock {
+	return &SystemClock{}
 }
 
-func (c *systemClock) Now() time.Time {
+func (c *SystemClock) Now() time.Time {
 	return time.Now()
 }
 
-type fixedClock struct {
+type FixedClock struct {
 	time time.Time
 }
 
-func NewFixedClock(t time.Time) *fixedClock {
-	return &fixedClock{time: t}
+func NewFixedClock(t time.Time) *FixedClock {
+	return &FixedClock{time: t}
 }
 
-func (c *fixedClock) Now() time.Time {
+func (c *FixedClock) Now() time.Time {
 	return c.time
 }
