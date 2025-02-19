@@ -7,6 +7,7 @@ import (
 
 	"github.com/FreibergVlad/url-shortener/api-gateway/internal/config"
 	"github.com/FreibergVlad/url-shortener/api-gateway/internal/middlewares/authentication"
+	"github.com/FreibergVlad/url-shortener/api-gateway/internal/middlewares/cors"
 	domainServiceProto "github.com/FreibergVlad/url-shortener/proto/pkg/domains/service/v1"
 	invitationServiceProto "github.com/FreibergVlad/url-shortener/proto/pkg/invitations/service/v1"
 	organizationServiceProto "github.com/FreibergVlad/url-shortener/proto/pkg/organizations/service/v1"
@@ -43,7 +44,27 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	registerGRPCEndpoints(ctx, mux, config)
+	httpHandler := registerHTTPMiddlewares(mux, config)
+
+	server := httpWithGracefulShutdown.NewServer(&http.Server{
+		Addr:              fmt.Sprintf(":%d", config.Port),
+		Handler:           httpHandler,
+		ReadHeaderTimeout: httpWithGracefulShutdown.ReadHeaderTimeout,
+	})
+	server.Run()
+}
+
+func registerHTTPMiddlewares(mux *runtime.ServeMux, config config.Config) http.Handler {
+	httpHandler := authentication.New(mux, config.JWTSecret, mux, ctxUserIDKey{})
+	httpHandler = cors.New(httpHandler)
+
+	return httpHandler
+}
+
+func registerGRPCEndpoints(ctx context.Context, mux *runtime.ServeMux, config config.Config) {
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
+
 	must.Do(userServiceProto.RegisterUserServiceHandlerFromEndpoint(ctx, mux, config.AuthServiceDSN, opts))
 	must.Do(tokenServiceProto.RegisterTokenServiceHandlerFromEndpoint(ctx, mux, config.AuthServiceDSN, opts))
 	must.Do(
@@ -61,13 +82,4 @@ func main() {
 			ctx, mux, config.ShortURLGeneratorServiceDSN, opts,
 		),
 	)
-
-	handler := authentication.New(mux, config.JWTSecret, mux, ctxUserIDKey{})
-
-	server := httpWithGracefulShutdown.NewServer(&http.Server{
-		Addr:              fmt.Sprintf(":%d", config.Port),
-		Handler:           handler,
-		ReadHeaderTimeout: httpWithGracefulShutdown.ReadHeaderTimeout,
-	})
-	server.Run()
 }

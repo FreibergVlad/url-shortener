@@ -10,12 +10,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 )
 
-func New(
-	next http.Handler,
-	jwtSecret string,
-	mux *runtime.ServeMux,
-	ctxUserIDKey any,
-) http.Handler {
+func New(next http.Handler, jwtSecret string, mux *runtime.ServeMux, ctxUserIDKey any) http.Handler {
 	return http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 		authHeader := request.Header.Get("Authorization")
 		if authHeader == "" {
