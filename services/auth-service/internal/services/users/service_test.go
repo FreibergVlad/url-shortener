@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/FreibergVlad/url-shortener/auth-service/internal/db/repositories"
 	"github.com/FreibergVlad/url-shortener/auth-service/internal/db/schema"
 	"github.com/FreibergVlad/url-shortener/auth-service/internal/services/roles"
 	"github.com/FreibergVlad/url-shortener/auth-service/internal/services/users"
@@ -70,12 +71,13 @@ func TestCreateUserWhenDatabaseError(t *testing.T) {
 	userRepo := testUtils.MockedUserRepository{}
 	userService := users.New(&userRepo, clock.NewFixedClock(time.Now()))
 	ctx := context.Background()
+	wantErr := gofakeit.ErrorDatabase()
 
-	userRepo.On("Create", ctx, mock.Anything).Return(errors.ErrDuplicateResource)
+	userRepo.On("Create", ctx, mock.Anything).Return(wantErr)
 
 	response, err := userService.CreateUser(ctx, testUtils.CreateTestUserRequest())
 
-	require.ErrorIs(t, err, errors.ErrDuplicateResource)
+	require.ErrorIs(t, err, wantErr)
 
 	assert.Nil(t, response)
 
@@ -109,12 +111,32 @@ func TestGetMeWhenDatabaseError(t *testing.T) {
 	userService := users.New(&userRepo, clock.NewFixedClock(time.Now()))
 	userID := gofakeit.UUID()
 	ctx := grpcUtils.IncomingContextWithUserID(context.Background(), userID)
+	wantErr := gofakeit.ErrorDatabase()
 
-	userRepo.On("GetByID", ctx, userID).Return(&schema.User{}, errors.ErrResourceNotFound)
+	userRepo.On("GetByID", ctx, userID).Return(&schema.User{}, wantErr)
 
 	response, err := userService.GetMe(ctx, &userServiceMessages.GetMeRequest{})
 
-	require.ErrorIs(t, err, errors.ErrResourceNotFound)
+	require.ErrorIs(t, err, wantErr)
+
+	assert.Nil(t, response)
+
+	userRepo.AssertExpectations(t)
+}
+
+func TestGetMeWhenUserNotFound(t *testing.T) {
+	t.Parallel()
+
+	userRepo := testUtils.MockedUserRepository{}
+	userService := users.New(&userRepo, clock.NewFixedClock(time.Now()))
+	userID := gofakeit.UUID()
+	ctx := grpcUtils.IncomingContextWithUserID(context.Background(), userID)
+
+	userRepo.On("GetByID", ctx, userID).Return(&schema.User{}, repositories.ErrNotFound)
+
+	response, err := userService.GetMe(ctx, &userServiceMessages.GetMeRequest{})
+
+	require.ErrorIs(t, err, errors.ErrUserNotFound)
 
 	assert.Nil(t, response)
 

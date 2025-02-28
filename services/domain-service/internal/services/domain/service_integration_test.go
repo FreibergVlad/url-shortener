@@ -8,6 +8,7 @@ import (
 	testUtils "github.com/FreibergVlad/url-shortener/domain-service/internal/testing"
 	domainServiceMessages "github.com/FreibergVlad/url-shortener/proto/pkg/domains/messages/v1"
 	grpcUtils "github.com/FreibergVlad/url-shortener/shared/go/pkg/api/grpc/utils"
+	"github.com/FreibergVlad/url-shortener/shared/go/pkg/errors"
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/testing/integration"
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/stretchr/testify/assert"
@@ -47,7 +48,7 @@ func TestListOrganizationDomainWhenUnauthenticated_Integration(t *testing.T) {
 	response, err := server.DomainServiceClient.ListOrganizationDomain(context.Background(), &request)
 
 	assert.Nil(t, response)
-	assert.ErrorContains(t, err, "unauthenticated")
+	assert.ErrorIs(t, err, errors.ErrUnauthenticated)
 }
 
 func publicDomains() []*domainServiceMessages.Domain {

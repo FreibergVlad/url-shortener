@@ -20,7 +20,7 @@ func middleware(
 	defer func() {
 		if r := recover(); r != nil {
 			log.Error().Msgf("panic occurred: %s", string(debug.Stack()))
-			err = errors.NewInternalError("Internal Server Error").GRPCStatus().Err()
+			err = errors.ErrInternalError
 		}
 	}()
 	return handler(ctx, req)

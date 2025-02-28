@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/FreibergVlad/url-shortener/auth-service/internal/config"
+	"github.com/FreibergVlad/url-shortener/auth-service/internal/db/repositories"
 	"github.com/FreibergVlad/url-shortener/auth-service/internal/db/repositories/invitations"
 	"github.com/FreibergVlad/url-shortener/auth-service/internal/db/repositories/organizations"
 	"github.com/FreibergVlad/url-shortener/auth-service/internal/db/repositories/users"
@@ -29,7 +30,6 @@ import (
 	grpcValidationMiddleware "github.com/FreibergVlad/url-shortener/shared/go/pkg/api/grpc/middlewares/validation"
 	redisCache "github.com/FreibergVlad/url-shortener/shared/go/pkg/cache/redis"
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/clock"
-	serviceErrors "github.com/FreibergVlad/url-shortener/shared/go/pkg/errors"
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/must"
 	grpcServer "github.com/FreibergVlad/url-shortener/shared/go/pkg/server/grpc"
 	"github.com/go-redis/cache/v9"
@@ -51,7 +51,7 @@ func ensureAdminUserExists(userRepository users.Repository, config config.Identi
 		CreatedAt:    time.Now(),
 	}
 	err := userRepository.Create(context.Background(), &user)
-	if errors.Is(err, serviceErrors.ErrDuplicateResource) {
+	if errors.Is(err, repositories.ErrAlreadyExists) {
 		return nil
 	}
 	return err

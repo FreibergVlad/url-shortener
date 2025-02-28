@@ -3,8 +3,10 @@ package invitations
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
+	"github.com/FreibergVlad/url-shortener/auth-service/internal/db/repositories"
 	"github.com/FreibergVlad/url-shortener/auth-service/internal/db/repositories/invitations"
 	"github.com/FreibergVlad/url-shortener/auth-service/internal/db/repositories/organizations"
 	"github.com/FreibergVlad/url-shortener/auth-service/internal/db/repositories/users"
@@ -48,23 +50,20 @@ func New(
 }
 
 func (s *InvitationService) CreateInvitation(
-	ctx context.Context,
-	req *protoMessages.CreateInvitationRequest,
+	ctx context.Context, req *protoMessages.CreateInvitationRequest,
 ) (*protoMessages.CreateInvitationResponse, error) {
 	invitedUser, err := s.userRepository.GetByEmail(ctx, req.Email)
 	if err == nil {
 		invitedUserMemberships, err := s.organizationRepository.ListOrganizationMembershipsByUserID(ctx, invitedUser.ID)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error listing organization memberships: %w", err)
 		}
 
 		if invitedUserMemberships.HasOrganization(req.OrganizationId) {
-			return nil, serviceErrors.NewValidationError(
-				"user %s already belongs to organization %s", req.Email, req.OrganizationId,
-			)
+			return nil, serviceErrors.ErrOrganizationMembershipAlreadyExists
 		}
-	} else if !errors.Is(err, serviceErrors.ErrResourceNotFound) {
-		return nil, err
+	} else if !errors.Is(err, repositories.ErrNotFound) {
+		return nil, fmt.Errorf("error getting user: %w", err)
 	}
 
 	invite := schema.Invitation{
@@ -79,7 +78,10 @@ func (s *InvitationService) CreateInvitation(
 	}
 
 	if err = s.invitationRepository.Create(ctx, &invite); err != nil {
-		return nil, err
+		if errors.Is(err, repositories.ErrAlreadyExists) {
+			return nil, serviceErrors.ErrOrganizationInvitationAlreadyExists
+		}
+		return nil, fmt.Errorf("error creating organization invitation: %w", err)
 	}
 
 	return &protoMessages.CreateInvitationResponse{
@@ -97,25 +99,24 @@ func (s *InvitationService) CreateInvitation(
 }
 
 func (s *InvitationService) AcceptInvitation(
-	ctx context.Context,
-	req *protoMessages.AcceptInvitationRequest,
+	ctx context.Context, req *protoMessages.AcceptInvitationRequest,
 ) (*protoMessages.AcceptInvitationResponse, error) {
 	userID := grpcUtils.UserIDFromIncomingContext(ctx)
 	user, err := s.userRepository.GetByID(ctx, userID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting user: %w", err)
 	}
 
 	invitation, err := s.invitationRepository.GetByID(ctx, req.Id)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, repositories.ErrNotFound) {
+			return nil, serviceErrors.ErrOrganizationInvitationNotFound
+		}
+		return nil, fmt.Errorf("error getting organization invitation: %w", err)
 	}
 
-	if invitation.Email != user.Email {
-		return nil, serviceErrors.NewPermissionDeniedError("permission denied")
-	}
-	if invitation.Status != invitationStatusActive.String() {
-		return nil, serviceErrors.NewValidationError("invite expired")
+	if invitation.Email != user.Email || invitation.Status != invitationStatusActive.String() {
+		return nil, serviceErrors.ErrOrganizationInvitationNotFound
 	}
 
 	membershipParams := organizations.CreateOrganizationMembershipParams{
@@ -125,12 +126,15 @@ func (s *InvitationService) AcceptInvitation(
 		CreatedAt:      s.clock.Now(),
 	}
 	if err = s.organizationRepository.CreateOrganizationMembership(ctx, &membershipParams); err != nil {
-		return nil, err
+		if errors.Is(err, repositories.ErrAlreadyExists) {
+			return nil, serviceErrors.ErrOrganizationMembershipAlreadyExists
+		}
+		return nil, fmt.Errorf("error creating organization membership: %w", err)
 	}
 
 	err = s.invitationRepository.UpdateStatusByID(ctx, invitation.ID, invitationStatusRedemeed.String())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error updating invitation status: %w", err)
 	}
 
 	return &protoMessages.AcceptInvitationResponse{}, nil

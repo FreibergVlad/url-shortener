@@ -2,13 +2,16 @@ package tokens
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/FreibergVlad/url-shortener/auth-service/internal/config"
+	"github.com/FreibergVlad/url-shortener/auth-service/internal/db/repositories"
 	"github.com/FreibergVlad/url-shortener/auth-service/internal/db/repositories/users"
 	protoMessages "github.com/FreibergVlad/url-shortener/proto/pkg/tokens/messages/v1"
 	protoService "github.com/FreibergVlad/url-shortener/proto/pkg/tokens/service/v1"
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/clock"
-	"github.com/FreibergVlad/url-shortener/shared/go/pkg/errors"
+	serviceErrors "github.com/FreibergVlad/url-shortener/shared/go/pkg/errors"
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/jwt"
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/must"
 	"golang.org/x/crypto/bcrypt"
@@ -34,11 +37,14 @@ func (s *TokenService) IssueAuthenticationToken(
 ) (*protoMessages.IssueAuthenticationTokenResponse, error) {
 	user, err := s.userRepository.GetByEmail(ctx, req.Email)
 	if err != nil {
-		return nil, errors.NewPermissionDeniedError("invalid credentials")
+		if errors.Is(err, repositories.ErrNotFound) {
+			return nil, serviceErrors.ErrInvalidCredentials
+		}
+		return nil, fmt.Errorf("error getting user: %w", err)
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
-		return nil, errors.NewPermissionDeniedError("invalid credentials")
+		return nil, serviceErrors.ErrInvalidCredentials
 	}
 
 	token := must.Return(jwt.IssueForUserID(user.ID, s.config.JWT.Secret, s.clock.Now(), s.config.JWT.LifetimeSeconds))
@@ -54,7 +60,10 @@ func (s *TokenService) RefreshAuthenticationToken(
 ) (*protoMessages.RefreshAuthenticationTokenResponse, error) {
 	userID, err := jwt.VerifyAndParseUserID(req.RefreshToken, s.config.JWT.RefreshSecret)
 	if err != nil {
-		return nil, errors.NewPermissionDeniedError("failed to refresh token: %s", err.Error())
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			return nil, serviceErrors.ErrTokenExpired
+		}
+		return nil, serviceErrors.ErrInvalidCredentials
 	}
 
 	token := must.Return(jwt.IssueForUserID(userID, s.config.JWT.Secret, s.clock.Now(), s.config.JWT.LifetimeSeconds))

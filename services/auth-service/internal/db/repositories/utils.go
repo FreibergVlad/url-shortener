@@ -5,12 +5,16 @@ import (
 	"fmt"
 	"time"
 
-	serviceErrors "github.com/FreibergVlad/url-shortener/shared/go/pkg/errors"
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/must"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
+)
+
+var (
+	ErrNotFound      = errors.New("resource not found")
+	ErrAlreadyExists = errors.New("resource already exists")
 )
 
 func MustPgUUIDFromString(uuid string) pgtype.UUID {
@@ -40,12 +44,12 @@ func TranslatePgError(err error) error {
 	var pgErr *pgconn.PgError
 	if !errors.As(err, &pgErr) {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return serviceErrors.ErrResourceNotFound
+			return ErrNotFound
 		}
 		return err
 	}
 	if pgErr.Code == pgerrcode.UniqueViolation {
-		return serviceErrors.ErrDuplicateResource
+		return ErrAlreadyExists
 	}
-	return err
+	return pgErr
 }

@@ -2,6 +2,7 @@ package resolver
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/FreibergVlad/url-shortener/auth-service/internal/db/repositories/organizations"
 	"github.com/FreibergVlad/url-shortener/auth-service/internal/db/repositories/users"
@@ -28,7 +29,7 @@ func (r *PermissionResolver) HasPermissions(
 ) (bool, error) {
 	user, err := r.userRepository.GetByID(ctx, userID)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("error getting user: %w", err)
 	}
 
 	globalRole, ok := roles.GetRole(user.RoleID)
@@ -39,7 +40,7 @@ func (r *PermissionResolver) HasPermissions(
 	if organizationID != nil {
 		memberships, err := r.organizationRepository.ListOrganizationMembershipsByUserID(ctx, userID)
 		if err != nil {
-			return false, err
+			return false, fmt.Errorf("failed to get user memberships %w", err)
 		}
 		if membership := memberships.OrganizationMembership(*organizationID); membership != nil {
 			orgRole, ok := roles.GetRole(membership.RoleID)

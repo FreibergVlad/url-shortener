@@ -2,13 +2,14 @@ package authorization
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
 
 	permissionsProtoMessages "github.com/FreibergVlad/url-shortener/proto/pkg/permissions/messages/v1"
 	grpcUtils "github.com/FreibergVlad/url-shortener/shared/go/pkg/api/grpc/utils"
-	"github.com/FreibergVlad/url-shortener/shared/go/pkg/errors"
+	serviceErrors "github.com/FreibergVlad/url-shortener/shared/go/pkg/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -16,6 +17,12 @@ import (
 )
 
 const grpcFullMethodNameLength = 3
+
+var (
+	ErrMethodNameLenTooShort = fmt.Errorf("grpc method name < %d", grpcFullMethodNameLength)
+	ErrUnknownService        = errors.New("grpc service name doesn't exist in services description")
+	ErrUnknownMethod         = errors.New("grpc method name doesn't exist in service description")
+)
 
 type permissionResolver interface {
 	HasPermissions(ctx context.Context, scopes []string, userID string, organizationID *string) (bool, error)
@@ -28,7 +35,7 @@ func New(
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		methodDesc, err := getMethodDescriptor(servicesDesc, info.FullMethod)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("can't find method '%s' descriptor: %w", info.FullMethod, err)
 		}
 		isAuthRequired := isAuthenticationRequired(methodDesc)
 		if !isAuthRequired {
@@ -37,7 +44,7 @@ func New(
 
 		userID := grpcUtils.UserIDFromIncomingContext(ctx)
 		if userID == "" {
-			return nil, errors.NewUnauthenticatedError("unauthenticated")
+			return nil, serviceErrors.ErrUnauthenticated
 		}
 
 		scopes := getRequiredScopes(methodDesc)
@@ -48,16 +55,11 @@ func New(
 		organizationID := organizationIDFromRequest(req)
 		ok, err := permissionResolver.HasPermissions(ctx, scopes, userID, organizationID)
 		if err != nil {
-			return nil, fmt.Errorf("failed to resolve permissions: %w", err)
+			return nil, fmt.Errorf("error resolving permissions: %w", err)
 		}
 
 		if !ok {
-			if organizationID == nil {
-				return nil, errors.NewPermissionDeniedError("user %s is not allowed to perform %s", userID, scopes)
-			}
-			return nil, errors.NewPermissionDeniedError(
-				"user %s is not allowed to perform %s within organization %s", userID, scopes, *organizationID,
-			)
+			return nil, serviceErrors.ErrInsufficientPermissions
 		}
 
 		return handler(ctx, req)
@@ -102,17 +104,17 @@ func getMethodDescriptor(
 ) (protoreflect.MethodDescriptor, error) {
 	fullMethodNameParts := strings.Split(fullMethodName, "/")
 	if len(fullMethodNameParts) < grpcFullMethodNameLength {
-		return nil, errors.NewInternalError("authorization: method %s not found", fullMethodName)
+		return nil, ErrMethodNameLenTooShort
 	}
 	serviceNameParts := strings.Split(fullMethodNameParts[1], ".")
 	shortServiceName, methodName := serviceNameParts[len(serviceNameParts)-1], fullMethodNameParts[2]
 	serviceDesc, ok := servicesDesc[shortServiceName]
 	if !ok {
-		return nil, errors.NewInternalError("authorization: method %s not found", fullMethodName)
+		return nil, ErrUnknownService
 	}
 	md := serviceDesc.Methods().ByName(protoreflect.Name(methodName))
 	if md == nil {
-		return nil, errors.NewInternalError("authorization: method %s not found", fullMethodName)
+		return nil, ErrUnknownMethod
 	}
 	return md, nil
 }

@@ -8,6 +8,8 @@ import (
 	testUtils "github.com/FreibergVlad/url-shortener/auth-service/internal/testing"
 	userServiceMessages "github.com/FreibergVlad/url-shortener/proto/pkg/users/messages/v1"
 	grpcUtils "github.com/FreibergVlad/url-shortener/shared/go/pkg/api/grpc/utils"
+	"github.com/FreibergVlad/url-shortener/shared/go/pkg/errors"
+	"github.com/FreibergVlad/url-shortener/shared/go/pkg/testing/asserts"
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/testing/integration"
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/stretchr/testify/assert"
@@ -49,7 +51,7 @@ func TestCreateUserWhenDuplicateEmail_Integration(t *testing.T) {
 
 	response, err := server.UserServiceClient.CreateUser(context.Background(), request)
 	assert.Nil(t, response)
-	assert.ErrorContains(t, err, "InvalidArgument")
+	assert.ErrorIs(t, err, errors.ErrUserAlreadyExists)
 }
 
 func TestCreateUserWhenInvalidRequest_Integration(t *testing.T) {
@@ -63,7 +65,9 @@ func TestCreateUserWhenInvalidRequest_Integration(t *testing.T) {
 	response, err := server.UserServiceClient.CreateUser(context.Background(), &userServiceMessages.CreateUserRequest{})
 
 	assert.Nil(t, response)
-	assert.ErrorContains(t, err, "InvalidArgument")
+
+	fieldViolations := map[string][]string{"email": {"value is required"}, "password": {"value is required"}}
+	asserts.AssertValidationErrorContainsFieldViolations(t, err, fieldViolations)
 }
 
 func TestCreateUserWhenInvalidEmail_Integration(t *testing.T) {
@@ -82,7 +86,7 @@ func TestCreateUserWhenInvalidEmail_Integration(t *testing.T) {
 	response, err := server.UserServiceClient.CreateUser(context.Background(), &request)
 
 	assert.Nil(t, response)
-	assert.ErrorContains(t, err, "InvalidArgument")
+	asserts.AssertValidationErrorContainsFieldViolation(t, err, "email", "must be a valid email address")
 }
 
 func TestGetMe_Integration(t *testing.T) {
@@ -122,5 +126,5 @@ func TestGetMeWhenUnauthenticated_Integration(t *testing.T) {
 	response, err := server.UserServiceClient.GetMe(context.Background(), &request)
 
 	assert.Nil(t, response)
-	assert.ErrorContains(t, err, "Unauthenticated")
+	assert.ErrorIs(t, err, errors.ErrUnauthenticated)
 }

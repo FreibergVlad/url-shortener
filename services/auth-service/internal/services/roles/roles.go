@@ -29,7 +29,7 @@ var (
 		Scopes: set(
 			"organization:create",
 			"organization-membership:list",
-			"organization-invite:create",
+			"organization-invitation:create",
 			"domain:list",
 			"short-url:read",
 			"short-url:list",
@@ -56,7 +56,7 @@ var (
 		Type:        RoleTypeOrganizational,
 		Description: "Full access within a specific organization.",
 		Scopes: set(
-			"organization-invite:create",
+			"organization-invitation:create",
 			"domain:list",
 			"short-url:read",
 			"short-url:list",
@@ -71,7 +71,7 @@ var (
 		Type:        RoleTypeOrganizational,
 		Description: "Full short URL access within a specific organization.",
 		Scopes: set(
-			"organization-invite:create",
+			"organization-invitation:create",
 			"domain:list",
 			"short-url:read",
 			"short-url:list",

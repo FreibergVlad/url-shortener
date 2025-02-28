@@ -1,11 +1,14 @@
 package jwt
 
 import (
+	"errors"
 	"time"
 
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/must"
 	"github.com/golang-jwt/jwt/v5"
 )
+
+var ErrTokenExpired = errors.New("JWT token is expired")
 
 func IssueForUserID(userID, secret string, issuedAt time.Time, lifetimeSeconds int) (string, error) {
 	claims := jwt.RegisteredClaims{
@@ -25,6 +28,9 @@ func VerifyAndParseUserID(rawToken, secret string) (string, error) {
 		jwt.WithExpirationRequired(),
 	)
 	if err != nil {
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			return "", ErrTokenExpired
+		}
 		return "", err
 	}
 	return must.Return(token.Claims.GetSubject()), nil

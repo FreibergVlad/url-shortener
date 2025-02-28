@@ -9,6 +9,8 @@ import (
 	testUtils "github.com/FreibergVlad/url-shortener/auth-service/internal/testing"
 	organizationServiceMessages "github.com/FreibergVlad/url-shortener/proto/pkg/organizations/messages/v1"
 	grpcUtils "github.com/FreibergVlad/url-shortener/shared/go/pkg/api/grpc/utils"
+	"github.com/FreibergVlad/url-shortener/shared/go/pkg/errors"
+	"github.com/FreibergVlad/url-shortener/shared/go/pkg/testing/asserts"
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/testing/integration"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -38,7 +40,7 @@ func TestCreateOrganizationWhenDuplicateSlug_Integration(t *testing.T) {
 	)
 
 	assert.Nil(t, response)
-	assert.ErrorContains(t, err, "InvalidArgument")
+	assert.ErrorIs(t, err, errors.ErrOrganizationAlreadyExists)
 }
 
 func TestCreateOrganizationWhenUnauthenticated_Integration(t *testing.T) {
@@ -53,7 +55,7 @@ func TestCreateOrganizationWhenUnauthenticated_Integration(t *testing.T) {
 
 	response, err := server.OrganizationServiceClient.CreateOrganization(context.Background(), request)
 
-	require.ErrorContains(t, err, "Unauthenticated")
+	require.ErrorIs(t, err, errors.ErrUnauthenticated)
 
 	assert.Nil(t, response)
 }
@@ -68,30 +70,60 @@ func TestCreateOrganizationWhenInvalidRequest_Integration(t *testing.T) {
 
 	user := testUtils.CreateTestUser(t, server)
 	tests := []struct {
-		test string
-		name string
-		slug string
+		name            string
+		orgName         string
+		slug            string
+		fieldViolations map[string][]string
 	}{
-		{"empty name and slug", "", ""},
-		{"too short name and slug", "a", "a"},
-		{"too long name and slug", strings.Repeat("a", 51), strings.Repeat("a", 51)},
-		{"invalid slug", "Test Name", "TES4 NAME!"},
+		{
+			"empty name and slug",
+			"",
+			"",
+			map[string][]string{
+				"name": {"value is required"},
+				"slug": {"value is required"},
+			},
+		},
+		{
+			"too short name and slug",
+			"a",
+			"a",
+			map[string][]string{
+				"name": {"at least 2 characters"},
+				"slug": {"at least 2 characters"},
+			},
+		},
+		{
+			"too long name and slug",
+			strings.Repeat("a", 51),
+			strings.Repeat("a", 51),
+			map[string][]string{
+				"name": {"at most 50 characters"},
+				"slug": {"at most 50 characters"},
+			},
+		},
+		{
+			"invalid slug",
+			"Test Name",
+			"TES4 NAME!",
+			map[string][]string{"slug": {"can contain URL allowed characters only"}},
+		},
 	}
 
-	for _, input := range tests {
-		t.Run(input.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
 			request := &organizationServiceMessages.CreateOrganizationRequest{
-				Name: input.name,
-				Slug: input.slug,
+				Name: test.orgName,
+				Slug: test.slug,
 			}
 			response, err := server.OrganizationServiceClient.CreateOrganization(
 				grpcUtils.OutgoingContextWithUserID(context.Background(), user.Id),
 				request,
 			)
 
-			require.ErrorContains(t, err, "InvalidArgument")
+			asserts.AssertValidationErrorContainsFieldViolations(t, err, test.fieldViolations)
 
 			assert.Nil(t, response)
 		})

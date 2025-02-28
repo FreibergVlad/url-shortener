@@ -12,7 +12,6 @@ import (
 	organizationServiceMessages "github.com/FreibergVlad/url-shortener/proto/pkg/organizations/messages/v1"
 	grpcUtils "github.com/FreibergVlad/url-shortener/shared/go/pkg/api/grpc/utils"
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/clock"
-	"github.com/FreibergVlad/url-shortener/shared/go/pkg/errors"
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -51,12 +50,13 @@ func TestCreateOrganizationWhenDatabaseError(t *testing.T) {
 	organizationService := organizations.New(organizationRepo, clock.NewFixedClock(time.Now()))
 	ctx := grpcUtils.IncomingContextWithUserID(context.Background(), gofakeit.UUID())
 	request := testUtils.CreateTestOrganizationRequest()
+	wantErr := gofakeit.ErrorDatabase()
 
-	organizationRepo.On("Create", ctx, mock.Anything).Return(errors.ErrDuplicateResource)
+	organizationRepo.On("Create", ctx, mock.Anything).Return(wantErr)
 
 	response, err := organizationService.CreateOrganization(ctx, request)
 
-	require.ErrorIs(t, err, errors.ErrDuplicateResource)
+	require.ErrorIs(t, err, wantErr)
 
 	assert.Nil(t, response)
 
@@ -111,14 +111,15 @@ func TestListMeOrganizationMembershipsWhenDatabaseError(t *testing.T) {
 	organizationService := organizations.New(organizationRepo, clock)
 	ctx := grpcUtils.IncomingContextWithUserID(context.Background(), userID)
 	request := &organizationServiceMessages.ListMeOrganizationMembershipsRequest{}
+	wantErr := gofakeit.ErrorDatabase()
 
 	organizationRepo.
 		On("ListOrganizationMembershipsByUserID", ctx, userID).
-		Return(schema.OrganizationMemberships{}, errors.ErrResourceNotFound)
+		Return(schema.OrganizationMemberships{}, wantErr)
 
 	response, err := organizationService.ListMeOrganizationMemberships(ctx, request)
 
-	require.ErrorIs(t, err, errors.ErrResourceNotFound)
+	require.ErrorIs(t, err, wantErr)
 
 	assert.Nil(t, response)
 

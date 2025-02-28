@@ -7,6 +7,7 @@ import (
 	testUtils "github.com/FreibergVlad/url-shortener/auth-service/internal/testing"
 	permissionServiceMessages "github.com/FreibergVlad/url-shortener/proto/pkg/permissions/messages/v1"
 	grpcUtils "github.com/FreibergVlad/url-shortener/shared/go/pkg/api/grpc/utils"
+	"github.com/FreibergVlad/url-shortener/shared/go/pkg/errors"
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/testing/integration"
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/stretchr/testify/assert"
@@ -25,7 +26,7 @@ func TestHasPermissionsWhenUnauthenticated_Integration(t *testing.T) {
 	response, err := server.PermissionServiceClient.HasPermissions(context.Background(), request)
 
 	assert.Nil(t, response)
-	assert.ErrorContains(t, err, "Unauthenticated")
+	assert.ErrorIs(t, err, errors.ErrUnauthenticated)
 }
 
 func TestHasPermissionsWhenUserDoesntExist_Integration(t *testing.T) {
@@ -41,7 +42,7 @@ func TestHasPermissionsWhenUserDoesntExist_Integration(t *testing.T) {
 	response, err := server.PermissionServiceClient.HasPermissions(ctx, request)
 
 	assert.Nil(t, response)
-	assert.ErrorContains(t, err, "NotFound")
+	assert.ErrorIs(t, err, errors.ErrInternalError)
 }
 
 func TestHasPermissionsWhenGlobalRoleMatches_Integration(t *testing.T) {

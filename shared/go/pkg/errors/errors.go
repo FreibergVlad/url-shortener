@@ -3,47 +3,103 @@ package errors
 import (
 	"fmt"
 
+	"github.com/FreibergVlad/url-shortener/shared/go/pkg/must"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/protoadapt"
 )
 
 var (
-	ErrDuplicateResource = NewValidationError("resource already exists")
-	ErrResourceNotFound  = NewNotFoundError("resource doesn't exist")
+	ErrUnauthenticated         = newUnauthenticatedError()
+	ErrInvalidCredentials      = newInvalidCredentialsError()
+	ErrTokenExpired            = newTokenExpiredError()
+	ErrInsufficientPermissions = newInsufficientPermissionsError()
+
+	ErrUserNotFound                   = newNotFoundError(ResourceTypeUser)
+	ErrOrganizationInvitationNotFound = newNotFoundError(ResourceTypeOrganizationInvitation)
+	ErrShortURLNotFound               = newNotFoundError(ResourceTypeShortURL)
+
+	ErrUserAlreadyExists                   = newDuplicatedResourceError(ResourceTypeUser)
+	ErrOrganizationAlreadyExists           = newDuplicatedResourceError(ResourceTypeOrganization)
+	ErrOrganizationMembershipAlreadyExists = newDuplicatedResourceError(ResourceTypeOrganizationMembership)
+	ErrOrganizationInvitationAlreadyExists = newDuplicatedResourceError(ResourceTypeOrganizationInvitation)
+	ErrShortURLAlreadyExists               = newDuplicatedResourceError(ResourceTypeShortURL)
+
+	ErrInternalError = newInternalError()
 )
 
-type ServiceError struct {
-	code code
-	msg  string
+type ErrReason string
+
+const (
+	ErrReasonInternal                ErrReason = "INTERNAL_SERVER_ERROR"
+	ErrReasonBadRequest              ErrReason = "BAD_REQUEST"
+	ErrReasonUnauthenticated         ErrReason = "UNAUTHENTICATED"
+	ErrReasonInvalidCredentials      ErrReason = "INVALID_CREDENTIALS" //nolint:gosec
+	ErrReasonInsufficientPermissions ErrReason = "INSUFFICIENT_PERMISSIONS"
+	ErrReasonTokenExpired            ErrReason = "TOKEN_EXPIRED"
+	ErrReasonNotFound                ErrReason = "NOT_FOUND"
+	ErrReasonAlreadyExists           ErrReason = "ALREADY_EXISTS"
+)
+
+type ResourceType string
+
+const (
+	ResourceTypeUser                   ResourceType = "user"
+	ResourceTypeOrganization           ResourceType = "organization"
+	ResourceTypeOrganizationMembership ResourceType = "organization-membership"
+	ResourceTypeOrganizationInvitation ResourceType = "organization-invitaton"
+	ResourceTypeShortURL               ResourceType = "short-url"
+)
+
+func NewValidationError(fieldViolations map[string][]string) error {
+	errorInfo := &errdetails.BadRequest{}
+	for field, violations := range fieldViolations {
+		for _, violation := range violations {
+			fieldViolation := &errdetails.BadRequest_FieldViolation{Field: field, Description: violation}
+			errorInfo.FieldViolations = append(errorInfo.FieldViolations, fieldViolation)
+		}
+	}
+
+	return newError(codes.InvalidArgument, "Invalid request parameters", ErrReasonBadRequest, errorInfo)
 }
 
-func NewError(code code, msg string, a ...any) ServiceError {
-	return ServiceError{code: code, msg: fmt.Sprintf(msg, a...)}
+func newDuplicatedResourceError(resourceType ResourceType) error {
+	msg := fmt.Sprintf("Resource '%s' already exists", resourceType)
+	return newError(codes.AlreadyExists, msg, ErrReasonAlreadyExists)
 }
 
-func NewPermissionDeniedError(msg string, a ...any) ServiceError {
-	return NewError(CodePermissionDenied, msg, a...)
+func newNotFoundError(resourceType ResourceType) error {
+	msg := fmt.Sprintf("Resource '%s' not found", resourceType)
+	return newError(codes.NotFound, msg, ErrReasonNotFound)
 }
 
-func NewUnauthenticatedError(msg string, a ...any) ServiceError {
-	return NewError(CodeUnauthenticated, msg, a...)
+func newUnauthenticatedError() error {
+	return newError(codes.Unauthenticated, "Unauthenticated", ErrReasonUnauthenticated)
 }
 
-func NewValidationError(msg string, a ...any) ServiceError {
-	return NewError(CodeInvalidArgument, msg, a...)
+func newInvalidCredentialsError() error {
+	return newError(codes.Unauthenticated, "Invalid credentials", ErrReasonInvalidCredentials)
 }
 
-func NewInternalError(msg string, a ...any) ServiceError {
-	return NewError(CodeInternal, msg, a...)
+func newTokenExpiredError() error {
+	return newError(codes.Unauthenticated, "Token expired", ErrReasonTokenExpired)
 }
 
-func NewNotFoundError(msg string, a ...any) ServiceError {
-	return NewError(CodeNotFound, msg, a...)
+func newInsufficientPermissionsError() error {
+	msg := "Not enough permissions to access resource"
+	return newError(codes.PermissionDenied, msg, ErrReasonInsufficientPermissions)
 }
 
-func (err ServiceError) GRPCStatus() *status.Status {
-	return status.New(err.code.grpsCode(), err.msg)
+func newInternalError() error {
+	return newError(codes.Internal, "Internal server error", ErrReasonInternal)
 }
 
-func (err ServiceError) Error() string {
-	return err.msg
+func newError(code codes.Code, msg string, reason ErrReason, extraDetails ...protoadapt.MessageV1) error {
+	errorInfo := &errdetails.ErrorInfo{Reason: string(reason)}
+	details := append([]protoadapt.MessageV1{errorInfo}, extraDetails...)
+
+	status := must.Return(status.New(code, msg).WithDetails(details...))
+
+	return status.Err()
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/FreibergVlad/url-shortener/auth-service/internal/config"
+	"github.com/FreibergVlad/url-shortener/auth-service/internal/db/repositories"
 	"github.com/FreibergVlad/url-shortener/auth-service/internal/db/schema"
 	"github.com/FreibergVlad/url-shortener/auth-service/internal/services/tokens"
 	testUtils "github.com/FreibergVlad/url-shortener/auth-service/internal/testing"
@@ -64,12 +65,36 @@ func TestIssueAuthenticationTokenWhenDatabaseError(t *testing.T) {
 		Password: fakePassword,
 	}
 	ctx := context.Background()
+	wantErr := gofakeit.ErrorDatabase()
 
-	userRepo.On("GetByEmail", ctx, request.Email).Return(&schema.User{}, errors.ErrResourceNotFound)
+	userRepo.On("GetByEmail", ctx, request.Email).Return(&schema.User{}, wantErr)
 
 	response, err := tokenService.IssueAuthenticationToken(context.Background(), &request)
 
-	require.ErrorContains(t, err, "invalid credentials")
+	require.ErrorIs(t, err, wantErr)
+
+	assert.Nil(t, response)
+
+	userRepo.AssertExpectations(t)
+}
+
+func TestIssueAuthenticationTokenWhenUserNotFound(t *testing.T) {
+	t.Parallel()
+
+	config := config.IdentityServiceConfig{}
+	userRepo := testUtils.MockedUserRepository{}
+	tokenService := tokens.New(config, &userRepo, clock.NewFixedClock(time.Now()))
+	request := tokenServiceMessages.IssueAuthenticationTokenRequest{
+		Email:    gofakeit.Email(),
+		Password: fakePassword,
+	}
+	ctx := context.Background()
+
+	userRepo.On("GetByEmail", ctx, request.Email).Return(&schema.User{}, repositories.ErrNotFound)
+
+	response, err := tokenService.IssueAuthenticationToken(context.Background(), &request)
+
+	require.ErrorIs(t, err, errors.ErrInvalidCredentials)
 
 	assert.Nil(t, response)
 
@@ -97,7 +122,7 @@ func TestIssueAuthenticationTokenWhenInvalidPassword(t *testing.T) {
 
 	response, err := tokenService.IssueAuthenticationToken(ctx, &request)
 
-	require.ErrorContains(t, err, "invalid credentials")
+	require.ErrorIs(t, err, errors.ErrInvalidCredentials)
 
 	assert.Nil(t, response)
 
@@ -130,7 +155,26 @@ func TestRefreshAuthenticationTokenWhenInvalidToken(t *testing.T) {
 
 	response, err := tokenService.RefreshAuthenticationToken(context.Background(), &request)
 
-	require.ErrorContains(t, err, "token is malformed")
+	require.ErrorIs(t, err, errors.ErrInvalidCredentials)
+
+	assert.Nil(t, response)
+}
+
+func TestRefreshAuthenticationTokenWhenTokenExpired(t *testing.T) {
+	t.Parallel()
+
+	config := config.IdentityServiceConfig{}
+	userRepo := testUtils.MockedUserRepository{}
+	clock := clock.NewFixedClock(time.Now())
+	tokenService := tokens.New(config, &userRepo, clock)
+	tokenIssuedAt := clock.Now().Add(-time.Hour)
+	token := must.Return(jwt.IssueForUserID(gofakeit.UUID(), config.JWT.RefreshSecret, tokenIssuedAt, 1))
+
+	request := tokenServiceMessages.RefreshAuthenticationTokenRequest{RefreshToken: token}
+
+	response, err := tokenService.RefreshAuthenticationToken(context.Background(), &request)
+
+	require.ErrorIs(t, err, errors.ErrTokenExpired)
 
 	assert.Nil(t, response)
 }

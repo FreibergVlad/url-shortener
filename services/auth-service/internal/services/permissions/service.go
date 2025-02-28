@@ -2,6 +2,7 @@ package permissions
 
 import (
 	"context"
+	"fmt"
 
 	protoMessages "github.com/FreibergVlad/url-shortener/proto/pkg/permissions/messages/v1"
 	protoService "github.com/FreibergVlad/url-shortener/proto/pkg/permissions/service/v1"
@@ -33,7 +34,7 @@ func (s *PermissionService) HasPermissions(
 
 	hasPermissions, err := s.permissionResolver.HasPermissions(ctx, req.Scopes, userID, organizationID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to resolve permissions: %w", err)
 	}
 
 	return &protoMessages.HasPermissionsResponse{HasPermissions: hasPermissions}, nil

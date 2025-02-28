@@ -2,7 +2,10 @@ package users
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
+	"github.com/FreibergVlad/url-shortener/auth-service/internal/db/repositories"
 	"github.com/FreibergVlad/url-shortener/auth-service/internal/db/repositories/users"
 	"github.com/FreibergVlad/url-shortener/auth-service/internal/db/schema"
 	"github.com/FreibergVlad/url-shortener/auth-service/internal/services/roles"
@@ -10,6 +13,7 @@ import (
 	protoService "github.com/FreibergVlad/url-shortener/proto/pkg/users/service/v1"
 	grpcUtils "github.com/FreibergVlad/url-shortener/shared/go/pkg/api/grpc/utils"
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/clock"
+	serviceErrors "github.com/FreibergVlad/url-shortener/shared/go/pkg/errors"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -32,7 +36,7 @@ func (s *UserService) CreateUser(
 ) (*protoMessages.CreateUserResponse, error) {
 	passHash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcryptCost)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error hashing password: %w", err)
 	}
 
 	user := schema.User{
@@ -45,25 +49,30 @@ func (s *UserService) CreateUser(
 
 	err = s.userRepository.Create(ctx, &user)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, repositories.ErrAlreadyExists) {
+			return nil, serviceErrors.ErrUserAlreadyExists
+		}
+		return nil, fmt.Errorf("error creating user: %w", err)
 	}
 
-	return &protoMessages.CreateUserResponse{User: userToResponse(&user)}, nil
+	return &protoMessages.CreateUserResponse{User: userToProto(&user)}, nil
 }
 
-func (s *UserService) GetMe(
-	ctx context.Context, _ *protoMessages.GetMeRequest,
-) (*protoMessages.GetMeResponse, error) {
+func (s *UserService) GetMe(ctx context.Context, _ *protoMessages.GetMeRequest) (*protoMessages.GetMeResponse, error) {
 	userID := grpcUtils.UserIDFromIncomingContext(ctx)
+
 	user, err := s.userRepository.GetByID(ctx, userID)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, repositories.ErrNotFound) {
+			return nil, serviceErrors.ErrUserNotFound
+		}
+		return nil, fmt.Errorf("error getting user: %w", err)
 	}
 
-	return &protoMessages.GetMeResponse{User: userToResponse(user)}, nil
+	return &protoMessages.GetMeResponse{User: userToProto(user)}, nil
 }
 
-func userToResponse(user *schema.User) *protoMessages.User {
+func userToProto(user *schema.User) *protoMessages.User {
 	return &protoMessages.User{
 		Id:        user.ID,
 		Email:     user.Email,

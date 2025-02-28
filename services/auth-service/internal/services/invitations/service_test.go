@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/FreibergVlad/url-shortener/auth-service/internal/db/repositories"
 	"github.com/FreibergVlad/url-shortener/auth-service/internal/db/repositories/organizations"
 	"github.com/FreibergVlad/url-shortener/auth-service/internal/db/schema"
 	"github.com/FreibergVlad/url-shortener/auth-service/internal/services/invitations"
@@ -57,7 +58,7 @@ func TestCreateInvitation(t *testing.T) {
 		RoleId:         roles.RoleIDMember,
 	}
 
-	userRepo.On("GetByEmail", ctx, request.Email).Return(&schema.User{}, errors.ErrResourceNotFound)
+	userRepo.On("GetByEmail", ctx, request.Email).Return(&schema.User{}, repositories.ErrNotFound)
 	invitationRepo.On("Create", ctx, mock.Anything).Return(nil)
 
 	response, err := invitationService.CreateInvitation(ctx, &request)
@@ -92,12 +93,13 @@ func TestCreateInvitationWhenErrorGettingInvitedUser(t *testing.T) {
 		OrganizationId: gofakeit.UUID(),
 		RoleId:         roles.RoleIDMember,
 	}
+	wantErr := gofakeit.ErrorDatabase()
 
-	userRepo.On("GetByEmail", ctx, request.Email).Return(&schema.User{}, errors.NewInternalError("err"))
+	userRepo.On("GetByEmail", ctx, request.Email).Return(&schema.User{}, wantErr)
 
 	response, err := invitationService.CreateInvitation(ctx, &request)
 
-	require.ErrorIs(t, err, errors.NewInternalError("err"))
+	require.ErrorIs(t, err, wantErr)
 
 	assert.Nil(t, response)
 
@@ -125,15 +127,16 @@ func TestCreateInvitationWhenErrorGettingInvitedUserMemberships(t *testing.T) {
 		ID:    gofakeit.UUID(),
 		Email: request.Email,
 	}
+	wantErr := gofakeit.ErrorDatabase()
 
 	userRepo.On("GetByEmail", ctx, request.Email).Return(&invitedUser, nil)
 	organizationRepo.
 		On("ListOrganizationMembershipsByUserID", ctx, invitedUser.ID).
-		Return(schema.OrganizationMemberships{}, errors.ErrResourceNotFound)
+		Return(schema.OrganizationMemberships{}, wantErr)
 
 	response, err := invitationService.CreateInvitation(ctx, &request)
 
-	require.ErrorIs(t, err, errors.ErrResourceNotFound)
+	require.ErrorIs(t, err, wantErr)
 
 	assert.Nil(t, response)
 
@@ -176,7 +179,7 @@ func TestCreateInvitationWhenUserAlreadyBelongsToOrganization(t *testing.T) {
 
 	response, err := invitationService.CreateInvitation(ctx, &request)
 
-	require.ErrorContains(t, err, "already belongs to organization")
+	require.ErrorIs(t, err, errors.ErrOrganizationMembershipAlreadyExists)
 
 	assert.Nil(t, response)
 
@@ -188,31 +191,52 @@ func TestCreateInvitationWhenUserAlreadyBelongsToOrganization(t *testing.T) {
 func TestCreateInvitationWhenErrorCreatingInvitation(t *testing.T) {
 	t.Parallel()
 
-	userRepo := testUtils.MockedUserRepository{}
-	organizationRepo := testUtils.MockedOrganizationRepository{}
-	invitationRepo := mockedInvitationRepository{}
+	unknownDBErr := gofakeit.ErrorDatabase()
 
-	clock := clock.NewFixedClock(time.Now())
-	invitationService := invitations.New(&userRepo, &invitationRepo, &organizationRepo, clock)
-	ctx := grpcUtils.IncomingContextWithUserID(context.Background(), gofakeit.UUID())
-	request := invitationServiceMessages.CreateInvitationRequest{
-		Email:          gofakeit.Email(),
-		OrganizationId: gofakeit.UUID(),
-		RoleId:         roles.RoleIDMember,
+	tests := []struct {
+		name    string
+		gotErr  error
+		wantErr error
+	}{
+		{name: "unknown error creating invitation", gotErr: unknownDBErr, wantErr: unknownDBErr},
+		{
+			name:    "invitation already exists",
+			gotErr:  repositories.ErrAlreadyExists,
+			wantErr: errors.ErrOrganizationInvitationAlreadyExists,
+		},
 	}
 
-	userRepo.On("GetByEmail", ctx, request.Email).Return(&schema.User{}, errors.ErrResourceNotFound)
-	invitationRepo.On("Create", ctx, mock.Anything).Return(errors.NewInternalError("err"))
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 
-	response, err := invitationService.CreateInvitation(ctx, &request)
+			userRepo := testUtils.MockedUserRepository{}
+			organizationRepo := testUtils.MockedOrganizationRepository{}
+			invitationRepo := mockedInvitationRepository{}
 
-	require.ErrorIs(t, err, errors.NewInternalError("err"))
+			clock := clock.NewFixedClock(time.Now())
+			invitationService := invitations.New(&userRepo, &invitationRepo, &organizationRepo, clock)
+			ctx := grpcUtils.IncomingContextWithUserID(context.Background(), gofakeit.UUID())
+			request := invitationServiceMessages.CreateInvitationRequest{
+				Email:          gofakeit.Email(),
+				OrganizationId: gofakeit.UUID(),
+				RoleId:         roles.RoleIDMember,
+			}
 
-	assert.Nil(t, response)
+			userRepo.On("GetByEmail", ctx, request.Email).Return(&schema.User{}, repositories.ErrNotFound)
+			invitationRepo.On("Create", ctx, mock.Anything).Return(test.gotErr)
 
-	userRepo.AssertExpectations(t)
-	invitationRepo.AssertExpectations(t)
-	organizationRepo.AssertExpectations(t)
+			response, err := invitationService.CreateInvitation(ctx, &request)
+
+			require.ErrorIs(t, err, test.wantErr)
+
+			assert.Nil(t, response)
+
+			userRepo.AssertExpectations(t)
+			invitationRepo.AssertExpectations(t)
+			organizationRepo.AssertExpectations(t)
+		})
+	}
 }
 
 func TestAcceptInvitation(t *testing.T) {
@@ -273,12 +297,13 @@ func TestAcceptInvitationWhenErrorGettingInvitedUser(t *testing.T) {
 	invitationService := invitations.New(&userRepo, &invitationRepo, &organizationRepo, clock)
 	user, ctx := fakeUserWithContext()
 	request := invitationServiceMessages.AcceptInvitationRequest{Id: gofakeit.UUID()}
+	wantErr := gofakeit.ErrorDatabase()
 
-	userRepo.On("GetByID", ctx, user.ID).Return(&schema.User{}, errors.ErrResourceNotFound)
+	userRepo.On("GetByID", ctx, user.ID).Return(&schema.User{}, wantErr)
 
 	response, err := invitationService.AcceptInvitation(ctx, &request)
 
-	require.ErrorIs(t, err, errors.ErrResourceNotFound)
+	require.ErrorIs(t, err, wantErr)
 
 	assert.Nil(t, response)
 
@@ -287,7 +312,54 @@ func TestAcceptInvitationWhenErrorGettingInvitedUser(t *testing.T) {
 	organizationRepo.AssertExpectations(t)
 }
 
-func TestAcceptInvitationWhenInvitationValidationFailed(t *testing.T) {
+func TestAcceptInvitationWhenErrorGettingInvitation(t *testing.T) {
+	t.Parallel()
+
+	unknownDBErr := gofakeit.ErrorDatabase()
+
+	tests := []struct {
+		name    string
+		gotErr  error
+		wantErr error
+	}{
+		{name: "unknown error getting invitation", gotErr: unknownDBErr, wantErr: unknownDBErr},
+		{
+			name:    "invitation not found",
+			gotErr:  repositories.ErrNotFound,
+			wantErr: errors.ErrOrganizationInvitationNotFound,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			userRepo := testUtils.MockedUserRepository{}
+			organizationRepo := testUtils.MockedOrganizationRepository{}
+			invitationRepo := mockedInvitationRepository{}
+
+			clock := clock.NewFixedClock(time.Now())
+			invitationService := invitations.New(&userRepo, &invitationRepo, &organizationRepo, clock)
+			user, ctx := fakeUserWithContext()
+
+			invitationID := gofakeit.UUID()
+			userRepo.On("GetByID", ctx, user.ID).Return(user, nil)
+			invitationRepo.On("GetByID", ctx, invitationID).Return(&schema.Invitation{}, test.gotErr)
+
+			request := invitationServiceMessages.AcceptInvitationRequest{Id: invitationID}
+			response, err := invitationService.AcceptInvitation(ctx, &request)
+
+			require.ErrorIs(t, err, test.wantErr)
+			assert.Nil(t, response)
+
+			userRepo.AssertExpectations(t)
+			invitationRepo.AssertExpectations(t)
+			organizationRepo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestAcceptInvitationWhenInvitationBelongsToAnotherUser(t *testing.T) {
 	t.Parallel()
 
 	userRepo := testUtils.MockedUserRepository{}
@@ -298,27 +370,33 @@ func TestAcceptInvitationWhenInvitationValidationFailed(t *testing.T) {
 	invitationService := invitations.New(&userRepo, &invitationRepo, &organizationRepo, clock)
 	user, ctx := fakeUserWithContext()
 
-	nonExistentInvitationID := gofakeit.UUID()
+	invitation := fakeActiveInvitation(gofakeit.Email())
 	userRepo.On("GetByID", ctx, user.ID).Return(user, nil)
-	invitationRepo.On("GetByID", ctx, nonExistentInvitationID).Return(&schema.Invitation{}, errors.ErrResourceNotFound)
+	invitationRepo.On("GetByID", ctx, invitation.ID).Return(invitation, nil)
 
-	request := invitationServiceMessages.AcceptInvitationRequest{Id: nonExistentInvitationID}
+	request := invitationServiceMessages.AcceptInvitationRequest{Id: invitation.ID}
 	response, err := invitationService.AcceptInvitation(ctx, &request)
 
-	require.ErrorIs(t, err, errors.ErrResourceNotFound)
+	require.ErrorIs(t, err, errors.ErrOrganizationInvitationNotFound)
 	assert.Nil(t, response)
 
-	invitationWithIncorrectEmail := fakeActiveInvitation(gofakeit.Email())
-	userRepo.On("GetByID", ctx, user.ID).Return(user, nil)
-	invitationRepo.On("GetByID", ctx, invitationWithIncorrectEmail.ID).Return(invitationWithIncorrectEmail, nil)
+	userRepo.AssertExpectations(t)
+	invitationRepo.AssertExpectations(t)
+	organizationRepo.AssertExpectations(t)
+}
 
-	request = invitationServiceMessages.AcceptInvitationRequest{Id: invitationWithIncorrectEmail.ID}
-	response, err = invitationService.AcceptInvitation(ctx, &request)
+func TestAcceptInvitationWhenInvitationExpired(t *testing.T) {
+	t.Parallel()
 
-	require.ErrorContains(t, err, "permission denied")
-	assert.Nil(t, response)
+	userRepo := testUtils.MockedUserRepository{}
+	organizationRepo := testUtils.MockedOrganizationRepository{}
+	invitationRepo := mockedInvitationRepository{}
 
-	expiredInvitation := schema.Invitation{
+	clock := clock.NewFixedClock(time.Now())
+	invitationService := invitations.New(&userRepo, &invitationRepo, &organizationRepo, clock)
+	user, ctx := fakeUserWithContext()
+
+	invitation := schema.Invitation{
 		ID:             gofakeit.UUID(),
 		Status:         invitationServiceMessages.InvitationStatus_INVITATION_STATUS_EXPIRED.String(),
 		OrganizationID: gofakeit.UUID(),
@@ -326,12 +404,12 @@ func TestAcceptInvitationWhenInvitationValidationFailed(t *testing.T) {
 		RoleID:         roles.RoleIDMember,
 	}
 	userRepo.On("GetByID", ctx, user.ID).Return(user, nil)
-	invitationRepo.On("GetByID", ctx, expiredInvitation.ID).Return(&expiredInvitation, nil)
+	invitationRepo.On("GetByID", ctx, invitation.ID).Return(&invitation, nil)
 
-	request = invitationServiceMessages.AcceptInvitationRequest{Id: expiredInvitation.ID}
-	response, err = invitationService.AcceptInvitation(ctx, &request)
+	request := invitationServiceMessages.AcceptInvitationRequest{Id: invitation.ID}
+	response, err := invitationService.AcceptInvitation(ctx, &request)
 
-	require.ErrorContains(t, err, "invite expired")
+	require.ErrorIs(t, err, errors.ErrOrganizationInvitationNotFound)
 	assert.Nil(t, response)
 
 	userRepo.AssertExpectations(t)
@@ -342,40 +420,61 @@ func TestAcceptInvitationWhenInvitationValidationFailed(t *testing.T) {
 func TestAcceptInvitationWhenErrorCreatingUserMembership(t *testing.T) {
 	t.Parallel()
 
-	userRepo := testUtils.MockedUserRepository{}
-	organizationRepo := testUtils.MockedOrganizationRepository{}
-	invitationRepo := mockedInvitationRepository{}
+	unknownDBErr := gofakeit.ErrorDatabase()
 
-	clock := clock.NewFixedClock(time.Now())
-	invitationService := invitations.New(&userRepo, &invitationRepo, &organizationRepo, clock)
-	user, ctx := fakeUserWithContext()
-	invitation := fakeActiveInvitation(user.Email)
-	request := invitationServiceMessages.AcceptInvitationRequest{Id: invitation.ID}
+	tests := []struct {
+		name    string
+		gotErr  error
+		wantErr error
+	}{
+		{name: "unknown error creating membership", gotErr: unknownDBErr, wantErr: unknownDBErr},
+		{
+			name:    "membership already exists",
+			gotErr:  repositories.ErrAlreadyExists,
+			wantErr: errors.ErrOrganizationMembershipAlreadyExists,
+		},
+	}
 
-	userRepo.On("GetByID", ctx, user.ID).Return(user, nil)
-	invitationRepo.On("GetByID", ctx, invitation.ID).Return(invitation, nil)
-	organizationRepo.
-		On(
-			"CreateOrganizationMembership",
-			ctx,
-			&organizations.CreateOrganizationMembershipParams{
-				OrganizationID: invitation.OrganizationID,
-				UserID:         user.ID,
-				RoleID:         invitation.RoleID,
-				CreatedAt:      clock.Now(),
-			},
-		).
-		Return(errors.NewInternalError("err"))
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 
-	response, err := invitationService.AcceptInvitation(ctx, &request)
+			userRepo := testUtils.MockedUserRepository{}
+			organizationRepo := testUtils.MockedOrganizationRepository{}
+			invitationRepo := mockedInvitationRepository{}
 
-	require.ErrorContains(t, err, "err")
+			clock := clock.NewFixedClock(time.Now())
+			invitationService := invitations.New(&userRepo, &invitationRepo, &organizationRepo, clock)
+			user, ctx := fakeUserWithContext()
+			invitation := fakeActiveInvitation(user.Email)
+			request := invitationServiceMessages.AcceptInvitationRequest{Id: invitation.ID}
 
-	assert.Nil(t, response)
+			userRepo.On("GetByID", ctx, user.ID).Return(user, nil)
+			invitationRepo.On("GetByID", ctx, invitation.ID).Return(invitation, nil)
+			organizationRepo.
+				On(
+					"CreateOrganizationMembership",
+					ctx,
+					&organizations.CreateOrganizationMembershipParams{
+						OrganizationID: invitation.OrganizationID,
+						UserID:         user.ID,
+						RoleID:         invitation.RoleID,
+						CreatedAt:      clock.Now(),
+					},
+				).
+				Return(test.gotErr)
 
-	userRepo.AssertExpectations(t)
-	invitationRepo.AssertExpectations(t)
-	organizationRepo.AssertExpectations(t)
+			response, err := invitationService.AcceptInvitation(ctx, &request)
+
+			require.ErrorIs(t, err, test.wantErr)
+
+			assert.Nil(t, response)
+
+			userRepo.AssertExpectations(t)
+			invitationRepo.AssertExpectations(t)
+			organizationRepo.AssertExpectations(t)
+		})
+	}
 }
 
 func TestAcceptInvitationWhenErrorUpdatingInvitationStatus(t *testing.T) {
@@ -390,6 +489,7 @@ func TestAcceptInvitationWhenErrorUpdatingInvitationStatus(t *testing.T) {
 	user, ctx := fakeUserWithContext()
 	invitation := fakeActiveInvitation(user.Email)
 	request := invitationServiceMessages.AcceptInvitationRequest{Id: invitation.ID}
+	wantErr := gofakeit.ErrorDatabase()
 
 	userRepo.On("GetByID", ctx, user.ID).Return(user, nil)
 	invitationRepo.On("GetByID", ctx, invitation.ID).Return(invitation, nil)
@@ -412,11 +512,11 @@ func TestAcceptInvitationWhenErrorUpdatingInvitationStatus(t *testing.T) {
 			invitation.ID,
 			invitationServiceMessages.InvitationStatus_INVITATION_STATUS_REDEEMED.String(),
 		).
-		Return(errors.NewInternalError("err"))
+		Return(wantErr)
 
 	response, err := invitationService.AcceptInvitation(ctx, &request)
 
-	require.ErrorContains(t, err, "err")
+	require.ErrorIs(t, err, wantErr)
 
 	assert.Nil(t, response)
 

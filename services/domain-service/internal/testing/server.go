@@ -20,7 +20,7 @@ type Server struct {
 func BootstrapServer() (*Server, func()) {
 	config := config.New()
 	listener := bufconn.Listen(buffConnBufSizeBytes)
-	server := server.Bootstrap(listener, mocks.MockedPermissionServiceClient(true), config)
+	server := server.Bootstrap(listener, mocks.NewMockedPermissionServiceClient(true), config)
 
 	serverStopped := make(chan struct{}, 1)
 	teardown := func() {

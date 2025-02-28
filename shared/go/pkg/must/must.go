@@ -7,7 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
-func Return[T interface{}](r T, err error) T {
+func Return[T any](r T, err error) T { //nolint:ireturn
 	if err != nil {
 		log.Panic().Err(err).Msg(err.Error())
 	}
@@ -20,18 +20,18 @@ func Do(err error) {
 	}
 }
 
-func MarshalJSON(v interface{}) []byte {
+func MarshalJSON(v any) []byte {
 	return Return(json.Marshal(v))
 }
 
-func UnmarshalJSON(data []byte, val interface{}) {
+func UnmarshalJSON(data []byte, val any) {
 	Do(json.Unmarshal(data, val))
 }
 
-func MarshallBSON(v interface{}) []byte {
+func MarshallBSON(v any) []byte {
 	return Return(bson.Marshal(v))
 }
 
-func UnmarshallBSON(data []byte, val interface{}) {
+func UnmarshallBSON(data []byte, val any) {
 	Do(bson.Unmarshal(data, val))
 }

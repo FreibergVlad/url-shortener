@@ -4,11 +4,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/FreibergVlad/url-shortener/auth-service/internal/db/repositories"
 	"github.com/FreibergVlad/url-shortener/auth-service/internal/db/schema"
 	"github.com/FreibergVlad/url-shortener/auth-service/internal/services/permissions/resolver"
 	"github.com/FreibergVlad/url-shortener/auth-service/internal/services/roles"
 	testUtils "github.com/FreibergVlad/url-shortener/auth-service/internal/testing"
-	"github.com/FreibergVlad/url-shortener/shared/go/pkg/errors"
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/stretchr/testify/require"
 )
@@ -21,12 +21,12 @@ func TestHasPermissionsWhenErrorGettingUser(t *testing.T) {
 	resolver := resolver.New(userRepo, organizationRepo)
 	ctx, userID := context.Background(), gofakeit.UUID()
 
-	userRepo.On("GetByID", ctx, userID).Return(&schema.User{}, errors.ErrResourceNotFound)
+	userRepo.On("GetByID", ctx, userID).Return(&schema.User{}, repositories.ErrNotFound)
 
 	hasPermissons, err := resolver.HasPermissions(ctx, []string{}, userID, nil)
 
 	require.False(t, hasPermissons)
-	require.ErrorIs(t, err, errors.ErrResourceNotFound)
+	require.ErrorIs(t, err, repositories.ErrNotFound)
 
 	userRepo.AssertExpectations(t)
 	organizationRepo.AssertExpectations(t)
@@ -44,12 +44,12 @@ func TestHasPermissionsWhenErrorGettingOrganizationMemberships(t *testing.T) {
 	userRepo.On("GetByID", ctx, user.ID).Return(user, nil)
 	organizationRepo.
 		On("ListOrganizationMembershipsByUserID", ctx, user.ID).
-		Return(schema.OrganizationMemberships{}, errors.ErrResourceNotFound)
+		Return(schema.OrganizationMemberships{}, repositories.ErrNotFound)
 
 	hasPermissons, err := resolver.HasPermissions(ctx, []string{"short-url:read"}, user.ID, &organizationID)
 
 	require.False(t, hasPermissons)
-	require.ErrorIs(t, err, errors.ErrResourceNotFound)
+	require.ErrorIs(t, err, repositories.ErrNotFound)
 }
 
 func TestHasPermissionsWithGlobalRole(t *testing.T) {

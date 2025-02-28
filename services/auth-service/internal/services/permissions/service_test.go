@@ -7,7 +7,6 @@ import (
 	"github.com/FreibergVlad/url-shortener/auth-service/internal/services/permissions"
 	permissionServiceMessages "github.com/FreibergVlad/url-shortener/proto/pkg/permissions/messages/v1"
 	grpcUtils "github.com/FreibergVlad/url-shortener/shared/go/pkg/api/grpc/utils"
-	serviceErrors "github.com/FreibergVlad/url-shortener/shared/go/pkg/errors"
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -61,17 +60,17 @@ func TestHasPermissionsWhenError(t *testing.T) {
 		Scopes:              scopes,
 		OrganizationContext: &permissionServiceMessages.OrganizationContext{OrganizationId: gofakeit.UUID()},
 	}
+	wantErr := gofakeit.ErrorGRPC()
 
-	mockErr := serviceErrors.NewPermissionDeniedError("mock error")
 	permissionResolver.
 		On("HasPermissions", ctx, scopes, userID, &request.OrganizationContext.OrganizationId).
-		Return(false, mockErr)
+		Return(false, wantErr)
 
 	response, err := permissionService.HasPermissions(ctx, &request)
 
 	assert.Nil(t, response)
 
-	require.ErrorIs(t, err, mockErr)
+	require.ErrorIs(t, err, wantErr)
 
 	permissionResolver.AssertExpectations(t)
 }

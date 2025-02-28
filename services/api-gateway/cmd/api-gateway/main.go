@@ -34,12 +34,16 @@ func main() {
 	zerolog.SetGlobalLevel(logLevel)
 
 	// extract user ID from context and pass it to all GRPC requests downstream
-	mux := runtime.NewServeMux(runtime.WithMetadata(func(ctx context.Context, _ *http.Request) metadata.MD {
-		if userID, ok := ctx.Value(ctxUserIDKey{}).(string); ok {
-			return grpcUtils.UserIDMetadata(userID)
-		}
-		return metadata.MD{}
-	}))
+	mux := runtime.NewServeMux(
+		runtime.WithMetadata(
+			func(ctx context.Context, _ *http.Request) metadata.MD {
+				if userID, ok := ctx.Value(ctxUserIDKey{}).(string); ok {
+					return grpcUtils.UserIDMetadata(userID)
+				}
+				return metadata.MD{}
+			},
+		),
+	)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

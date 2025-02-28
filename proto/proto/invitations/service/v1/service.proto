@@ -13,7 +13,7 @@ option go_package = "service/v1";
 
 service InvitationService {
   rpc CreateInvitation(invitations.messages.v1.CreateInvitationRequest) returns (invitations.messages.v1.CreateInvitationResponse) {
-    option (permissions.messages.v1.required_permissions) = "organization-invite:create";
+    option (permissions.messages.v1.required_permissions) = "organization-invitation:create";
     option (google.api.http) = {
       post: "/v1/organizations/{organization_id}/invites"
       body: "*"

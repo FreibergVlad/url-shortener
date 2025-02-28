@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/FreibergVlad/url-shortener/shared/go/pkg/errors"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -23,12 +24,14 @@ func middleware(
 
 	event, code, errMsg := log.Info(), codes.OK, "" //nolint:zerologlint
 	if err != nil {
-		errStatus, ok := status.FromError(err)
-		if !ok {
-			errStatus = status.New(codes.Internal, err.Error())
-		}
-		err, code, errMsg = errStatus.Err(), errStatus.Code(), errStatus.Message()
+		grpcStatus := ensureGRPCStatus(err)
+
+		code, errMsg = grpcStatus.Code(), grpcStatus.Message()
 		event = log.Error() //nolint:zerologlint
+
+		if code == codes.Internal {
+			err = errors.ErrInternalError
+		}
 	}
 
 	event.
@@ -38,4 +41,12 @@ func middleware(
 		Msg(errMsg)
 
 	return resp, err
+}
+
+func ensureGRPCStatus(err error) *status.Status {
+	errStatus, ok := status.FromError(err)
+	if !ok {
+		errStatus = status.New(codes.Internal, err.Error())
+	}
+	return errStatus
 }
