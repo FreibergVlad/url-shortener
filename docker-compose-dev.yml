@@ -1,73 +1,74 @@
 services:
-  # short-url-redirection-service:
-  #   build:
-  #     dockerfile: ./services/short-url-redirection-service/Dockerfile
-  #   container_name: short-url-redirection-service
-  #   ports:
-  #     - 8080:8080
-  #   environment:
-  #     - PORT=8080
-  #     - LOG_LEVEL=info
-  #     - DOMAIN=localhost:8080
-  #     - SHORT_URL_MANAGEMENT_SERVICE_DSN=short-url-management-service:8082
-  #   depends_on:
-  #     - short-url-management-service
+  short-url-redirection-service:
+    build:
+      dockerfile: ./services/short-url-redirection-service/Dockerfile
+    container_name: short-url-redirection-service
+    ports:
+      - 8080:8080
+    environment:
+      - PORT=8080
+      - LOG_LEVEL=info
+      - DOMAIN=localhost:8080
+      - SHORT_URL_MANAGEMENT_SERVICE_DSN=short-url-management-service:8082
+    depends_on:
+      - short-url-management-service
 
-  # short-url-generator-service:
-  #   build:
-  #     dockerfile: ./services/short-url-management-service/Dockerfile
-  #     target: short-url-generator-service
-  #   container_name: short-url-generator-service
-  #   ports:
-  #     - 8081:8081
-  #   environment:
-  #     - PORT=8081
-  #     - LOG_LEVEL=info
-  #     - SHORT_URL_ALIAS_LENGTH=4
-  #     - SHORT_URL_SCHEME=http
-  #     - MAX_RETRIES_ON_COLLISION=5
-  #     - MONGO_DSN=mongodb://root:root@mongodb:27017/short-url-management-service?authSource=admin
-  #     - MONGO_DB_NAME=short-url-management-service
-  #     - REDIS_DSN=redis://:root@redis-cache:6379/0
-  #     - AUTH_SERVICE_DSN=auth-service:8083
-  #   depends_on:
-  #     - mongodb
-  #     - redis-cache
-  #     - auth-service
-  #     - domain-service
-  #     - short-url-service-migrations
+  short-url-generator-service:
+    build:
+      dockerfile: ./services/short-url-management-service/docker/Dockerfile
+      target: short-url-generator-service
+    container_name: short-url-generator-service
+    ports:
+      - 8081:8081
+    environment:
+      - PORT=8081
+      - LOG_LEVEL=info
+      - SHORT_URL_ALIAS_LENGTH=4
+      - SHORT_URL_SCHEME=http
+      - MAX_RETRIES_ON_COLLISION=5
+      - MONGO_DSN=mongodb://root:root@mongodb:27017/short-url-management-service?authSource=admin
+      - MONGO_DB_NAME=short-url-management-service
+      - REDIS_DSN=redis://:root@redis-cache:6379/0
+      - AUTH_SERVICE_DSN=auth-service:8083
+      - DOMAIN_SERVICE_DSN=domain-service:8084
+    depends_on:
+      - mongodb
+      - redis-cache
+      - auth-service
+      - domain-service
+      - short-url-service-migrations
 
-  # short-url-management-service:
-  #   build:
-  #     dockerfile: ./services/short-url-management-service/Dockerfile
-  #     target: short-url-management-service
-  #   container_name: short-url-management-service
-  #   ports:
-  #     - 8082:8082
-  #   environment:
-  #     - PORT=8082
-  #     - LOG_LEVEL=info
-  #     - MONGO_DSN=mongodb://root:root@mongodb:27017/short-url-management-service?authSource=admin
-  #     - MONGO_DB_NAME=short-url-management-service
-  #     - REDIS_DSN=redis://:root@redis-cache:6379/0
-  #     - AUTH_SERVICE_DSN=auth-service:8083
-  #   depends_on:
-  #     - mongodb
-  #     - redis-cache
-  #     - auth-service
-  #     - short-url-service-migrations
+  short-url-management-service:
+    build:
+      dockerfile: ./services/short-url-management-service/docker/Dockerfile
+      target: short-url-management-service
+    container_name: short-url-management-service
+    ports:
+      - 8082:8082
+    environment:
+      - PORT=8082
+      - LOG_LEVEL=info
+      - MONGO_DSN=mongodb://root:root@mongodb:27017/short-url-management-service?authSource=admin
+      - MONGO_DB_NAME=short-url-management-service
+      - REDIS_DSN=redis://:root@redis-cache:6379/0
+      - AUTH_SERVICE_DSN=auth-service:8083
+    depends_on:
+      - mongodb
+      - redis-cache
+      - auth-service
+      - short-url-service-migrations
 
-  # short-url-service-migrations:
-  #   build:
-  #     dockerfile: ./services/short-url-management-service/Dockerfile
-  #     target: migrations
-  #   container_name: short-url-management-service-migrations
-  #   environment:
-  #     - LOG_LEVEL=info
-  #     - MONGO_DSN=mongodb://root:root@mongodb:27017/short-url-management-service?authSource=admin
-  #     - MONGO_DB_NAME=short-url-management-service
-  #   depends_on:
-  #     - mongodb
+  short-url-service-migrations:
+    build:
+      dockerfile: ./services/short-url-management-service/docker/Dockerfile
+      target: migrations
+    container_name: short-url-management-service-migrations
+    environment:
+      - LOG_LEVEL=info
+      - MONGO_DSN=mongodb://root:root@mongodb:27017/short-url-management-service?authSource=admin
+      - MONGO_DB_NAME=short-url-management-service
+    depends_on:
+      - mongodb
 
   auth-service:
     build:
@@ -132,8 +133,8 @@ services:
       - AUTH_SERVICE_DSN=auth-service:8083
       - DOMAIN_SERVICE_DSN=domain-service:8084
     depends_on:
-      # - short-url-management-service
-      # - short-url-generator-service
+      - short-url-management-service
+      - short-url-generator-service
       - auth-service
       - domain-service
 
