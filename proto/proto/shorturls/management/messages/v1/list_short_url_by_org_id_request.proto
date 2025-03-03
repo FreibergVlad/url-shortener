@@ -7,7 +7,10 @@ import "buf/validate/validate.proto";
 option go_package = "messages/v1";
 
 message ListShortURLByOrganizationIDRequest {
-  string organization_id = 1 [(buf.validate.field).required = true];
+  string organization_id = 1 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string.uuid = true
+  ];
 
   int32 page_num = 2 [
     (buf.validate.field).required = true,
@@ -16,8 +19,8 @@ message ListShortURLByOrganizationIDRequest {
   int32 page_size = 3 [
     (buf.validate.field).required = true,
     (buf.validate.field).int32 = {
-      gte: 10
-      lte: 200
+      gte: 1
+      lte: 100
     }
   ];
 }

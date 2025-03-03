@@ -22,7 +22,7 @@ USER nonroot:nonroot
 WORKDIR /home/nonroot
 
 COPY --from=build --chown=root:root --chmod=755 /build/services/short-url-management-service/short-url-service-migrations .
-COPY --from=build --chown=root:root --chmod=755 /build/services/short-url-management-service/internal/db/migrations db/migrations/
+COPY --from=build --chown=root:root --chmod=755 /build/services/short-url-management-service/internal/db/migrations/versions /db/migrations/versions
 
 ENTRYPOINT ["/home/nonroot/short-url-service-migrations"]
 

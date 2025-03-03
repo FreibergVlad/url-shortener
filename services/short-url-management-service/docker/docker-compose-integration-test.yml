@@ -1,0 +1,38 @@
+services:
+  short-url-management-service-test:
+    build:
+      dockerfile: ./services/short-url-management-service/docker/Dockerfile.integration-test
+      context: ../../../
+    container_name: short-url-management-service-test
+    environment:
+      - PORT=8082
+      - LOG_LEVEL=info
+      - MONGO_DSN=mongodb://root:root@short-url-management-service-test-mongodb:27017/short-url-management-service-test?authSource=admin
+      - MONGO_DB_NAME=short-url-management-service-test
+      - REDIS_DSN=redis://:root@short-url-management-service-test-redis-cache:6379/0
+      - AUTH_SERVICE_DSN=fake-dsn
+      - DOMAIN_SERVICE_DSN=fake-dsn
+    volumes:
+      - ./coverage:/coverage
+
+  short-url-management-service-test-mongodb:
+    image: mongo:latest
+    container_name: short-url-management-service-test-mongodb
+    ports:
+      - 27017:27017
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=root
+    tmpfs:
+      - /data/db
+
+  short-url-management-service-test-redis-cache:
+    image: redis:latest
+    container_name: short-url-management-service-test-redis-cache
+    ports:
+      - 6379:6379
+    environment:
+      - REDIS_PASSWORD=root
+      - REDIS_PORT=6379
+    tmpfs:
+      - /data

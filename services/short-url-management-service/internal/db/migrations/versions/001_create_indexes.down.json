@@ -9,6 +9,6 @@
     },
     {
       "dropIndexes": "short_urls",
-      "index": "organization_id_status"
+      "index": "organization_id"
     }
 ]

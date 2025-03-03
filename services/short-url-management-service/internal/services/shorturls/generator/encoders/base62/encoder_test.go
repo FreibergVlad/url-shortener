@@ -3,8 +3,9 @@ package base62_test
 import (
 	"testing"
 
-	"github.com/FreibergVlad/url-shortener/short-url-management-service/internal/services/shorturl/generator/encoders/base62"
+	"github.com/FreibergVlad/url-shortener/short-url-management-service/internal/services/shorturls/generator/encoders/base62"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestEncode_InvalidLength(t *testing.T) {
@@ -13,10 +14,10 @@ func TestEncode_InvalidLength(t *testing.T) {
 	encoder, length := base62.New(), 6
 
 	_, err := encoder.Encode([]byte{}, length)
-	assert.ErrorContains(t, err, "encoded string <")
+	require.ErrorContains(t, err, "encoded string <")
 
 	_, err = encoder.Encode([]byte("td"), length)
-	assert.ErrorContains(t, err, "encoded string <")
+	require.ErrorContains(t, err, "encoded string <")
 }
 
 func TestEncode(t *testing.T) {
@@ -36,8 +37,8 @@ func TestEncode(t *testing.T) {
 
 		actual, err := encoder.Encode(test.in, length)
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, test.expected, actual)
-		assert.Equal(t, length, len(actual))
+		assert.Len(t, actual, length)
 	}
 }

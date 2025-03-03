@@ -7,7 +7,10 @@ import "buf/validate/validate.proto";
 option go_package = "messages/v1";
 
 message DeleteShortURLByOrganizationIDRequest {
-  string organization_id = 1 [(buf.validate.field).required = true];
+  string organization_id = 1 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string.uuid = true
+  ];
   string domain = 2 [(buf.validate.field).required = true];
   string alias = 3 [(buf.validate.field).required = true];
 }

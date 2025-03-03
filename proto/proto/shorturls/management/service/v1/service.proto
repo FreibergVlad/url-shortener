@@ -31,6 +31,10 @@ service ShortURLManagementService {
   }
   rpc UpdateShortURLByOrganizationID(shorturls.management.messages.v1.UpdateShortURLByOrganizationIDRequest) returns (shorturls.management.messages.v1.UpdateShortURLByOrganizationIDResponse) {
     option (permissions.messages.v1.required_permissions) = "short-url:update";
+    option (google.api.http) = {
+      patch: "/v1/short-urls/{organization_id}/{domain}/{alias}"
+      body: "short_url"
+    };
   }
   rpc DeleteShortURLByOrganizationID(shorturls.management.messages.v1.DeleteShortURLByOrganizationIDRequest) returns (shorturls.management.messages.v1.DeleteShortURLByOrganizationIDResponse) {
     option (permissions.messages.v1.required_permissions) = "short-url:delete";

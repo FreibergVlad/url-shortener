@@ -227,6 +227,45 @@
             "type": "string"
           }
         ]
+      },
+      "patch": {
+        "operationId": "UpdateShortURLByOrganizationID",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/UpdateShortURLByOrganizationIDResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "domain",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "alias",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "shortUrl",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/UpdateShortURLParams"
+            }
+          }
+        ]
       }
     },
     "/v1/tokens/issue": {
@@ -384,8 +423,12 @@
         "domain": {
           "type": "string"
         },
-        "longUrl": {
+        "alias": {
           "type": "string"
+        },
+        "longUrl": {
+          "type": "string",
+          "title": "validated at application level"
         },
         "tags": {
           "type": "array",
@@ -425,7 +468,7 @@
       "type": "object",
       "properties": {
         "user": {
-          "$ref": "#/definitions/User"
+          "$ref": "#/definitions/users.messages.v1.User"
         }
       }
     },
@@ -444,7 +487,7 @@
       "type": "object",
       "properties": {
         "user": {
-          "$ref": "#/definitions/User"
+          "$ref": "#/definitions/users.messages.v1.User"
         }
       }
     },
@@ -558,8 +601,8 @@
           }
         },
         "total": {
-          "type": "integer",
-          "format": "int32"
+          "type": "string",
+          "format": "int64"
         }
       }
     },
@@ -705,9 +748,6 @@
         "alias": {
           "type": "string"
         },
-        "status": {
-          "$ref": "#/definitions/ShortURLStatus"
-        },
         "expiresAt": {
           "type": "string",
           "format": "date-time"
@@ -716,12 +756,8 @@
           "type": "string",
           "format": "date-time"
         },
-        "deletedAt": {
-          "type": "string",
-          "format": "date-time"
-        },
         "createdBy": {
-          "type": "string"
+          "$ref": "#/definitions/management.messages.v1.User"
         },
         "description": {
           "type": "string"
@@ -734,15 +770,6 @@
         }
       }
     },
-    "ShortURLStatus": {
-      "type": "string",
-      "enum": [
-        "SHORT_URL_STATUS_UNSPECIFIED",
-        "SHORT_URL_STATUS_ACTIVE",
-        "SHORT_URL_STATUS_DELETED"
-      ],
-      "default": "SHORT_URL_STATUS_UNSPECIFIED"
-    },
     "UpdateShortURLByOrganizationIDResponse": {
       "type": "object",
       "properties": {
@@ -751,7 +778,43 @@
         }
       }
     },
-    "User": {
+    "UpdateShortURLParams": {
+      "type": "object",
+      "properties": {
+        "alias": {
+          "type": "string"
+        },
+        "longUrl": {
+          "type": "string",
+          "title": "validated at application level"
+        },
+        "description": {
+          "type": "string"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "management.messages.v1.User": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        }
+      }
+    },
+    "users.messages.v1.User": {
       "type": "object",
       "properties": {
         "id": {

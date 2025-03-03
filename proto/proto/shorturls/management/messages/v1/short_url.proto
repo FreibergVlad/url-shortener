@@ -3,16 +3,8 @@ syntax = "proto3";
 package shorturls.management.messages.v1;
 
 import "google/protobuf/timestamp.proto";
-import "google/protobuf/wrappers.proto";
 
 option go_package = "messages/v1";
-
-enum ShortURLStatus {
-  SHORT_URL_STATUS_UNSPECIFIED = 0;
-
-  SHORT_URL_STATUS_ACTIVE = 1;
-  SHORT_URL_STATUS_DELETED = 3;
-}
 
 message LongURL {
   string hash = 1;
@@ -23,17 +15,20 @@ message LongURL {
   string query = 6;
 }
 
+message User {
+  string id = 1;
+  string email = 2;
+}
+
 message ShortURL {
   string organization_id = 1;
   LongURL long_url = 2;
   string short_url = 3;
   string domain = 4;
   string alias = 5;
-  ShortURLStatus status = 6;
-  google.protobuf.Timestamp expires_at = 7;
-  google.protobuf.Timestamp created_at = 8;
-  google.protobuf.Timestamp deleted_at = 9;
-  string created_by = 11;
-  google.protobuf.StringValue description = 12;
-  repeated string tags = 13;
+  google.protobuf.Timestamp expires_at = 6;
+  google.protobuf.Timestamp created_at = 7;
+  User created_by = 8;
+  string description = 9;
+  repeated string tags = 10;
 }

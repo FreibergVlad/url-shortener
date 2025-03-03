@@ -9,13 +9,21 @@ import "google/protobuf/wrappers.proto";
 option go_package = "messages/v1";
 
 message CreateShortURLRequest {
-  string organization_id = 1 [(buf.validate.field).required = true];
+  string organization_id = 1 [
+    (buf.validate.field).required = true,
+    (buf.validate.field).string.uuid = true
+  ];
   string domain = 2 [(buf.validate.field).required = true];
-  string long_url = 3 [(buf.validate.field).required = true];
+  google.protobuf.StringValue alias = 3 [
+    (buf.validate.field).string.min_len = 4,
+    (buf.validate.field).string.max_len = 30,
+    (buf.validate.field).string.pattern = "^[A-Za-z0-9]+$"
+  ];
+  string long_url = 4 [(buf.validate.field).required = true]; // validated at application level
 
   repeated string tags = 5 [
     (buf.validate.field).repeated.unique = true,
-    (buf.validate.field).repeated.max_items = 20,
+    (buf.validate.field).repeated.max_items = 10,
     (buf.validate.field).repeated.items = {
       string: {
         min_len: 1
@@ -23,6 +31,6 @@ message CreateShortURLRequest {
       }
     }
   ];
-  google.protobuf.Timestamp expires_at = 7 [(buf.validate.field).timestamp.gt_now = true];
-  google.protobuf.StringValue description = 8 [(buf.validate.field).string.max_len = 1000];
+  google.protobuf.Timestamp expires_at = 6 [(buf.validate.field).timestamp.gt_now = true];
+  string description = 7 [(buf.validate.field).string.max_len = 1000];
 }
