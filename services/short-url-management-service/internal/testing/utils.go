@@ -12,6 +12,7 @@ import (
 	grpcUtils "github.com/FreibergVlad/url-shortener/shared/go/pkg/api/grpc/utils"
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/must"
 	"github.com/FreibergVlad/url-shortener/short-url-management-service/internal/db/schema"
+	"github.com/FreibergVlad/url-shortener/short-url-management-service/internal/services/shorturls"
 	"github.com/FreibergVlad/url-shortener/short-url-management-service/internal/services/shorturls/generator/encoders/base62"
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/stretchr/testify/assert"
@@ -24,7 +25,11 @@ var FakeUser = schema.User{
 	Email: gofakeit.Email(),
 }
 
-const shortURLExpirationInterval = time.Hour * 24
+const (
+	shortURLExpirationInterval = time.Hour * 24
+	minShortURLAliasLength     = 4
+	maxShortURLAliasLength     = 30
+)
 
 func CreateShortURLRequest() *shortURLGeneratorMessages.CreateShortURLRequest {
 	return &shortURLGeneratorMessages.CreateShortURLRequest{
@@ -86,6 +91,29 @@ func AssertTimestampNearlyEqual(t *testing.T, want *timestamppb.Timestamp, got *
 	t.Helper()
 
 	assert.WithinDuration(t, want.AsTime(), got.AsTime(), time.Second)
+}
+
+func RandomShortURL() *schema.ShortURL {
+	expiresAt := gofakeit.FutureDate()
+	return &schema.ShortURL{
+		OrganizationID: gofakeit.UUID(),
+		LongURL:        shorturls.ParseLongURL(gofakeit.URL()),
+		Scheme:         "https",
+		Domain:         gofakeit.DomainName(),
+		Alias:          RandomShortURLAlias(),
+		CreatedAt:      gofakeit.PastDate(),
+		ExpiresAt:      &expiresAt,
+		CreatedBy: schema.User{
+			ID:    gofakeit.UUID(),
+			Email: gofakeit.Email(),
+		},
+		Description: gofakeit.ProductDescription(),
+		Tags:        []string{gofakeit.PronounObject(), gofakeit.PronounObject()},
+	}
+}
+
+func RandomShortURLAlias() string {
+	return RandomBase62StringInRange(minShortURLAliasLength, maxShortURLAliasLength)
 }
 
 func RandomBase62String(length int) string {

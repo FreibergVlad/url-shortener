@@ -212,7 +212,7 @@ func TestCreateShortUrlWithCustomAlias_Integration(t *testing.T) {
 	t.Cleanup(teardown)
 
 	request := testUtils.CreateShortURLRequest()
-	request.Alias = wrapperspb.String(testUtils.RandomBase62StringInRange(4, 30))
+	request.Alias = wrapperspb.String(testUtils.RandomShortURLAlias())
 
 	testUtils.AssertCreateShortURL(t, server, request)
 }

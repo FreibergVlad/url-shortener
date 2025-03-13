@@ -5,16 +5,16 @@ import (
 	"errors"
 	"fmt"
 
-	protoMessages "github.com/FreibergVlad/url-shortener/proto/pkg/shorturls/generator/messages/v1"
-	protoService "github.com/FreibergVlad/url-shortener/proto/pkg/shorturls/generator/service/v1"
-	grpcUtils "github.com/FreibergVlad/url-shortener/shared/go/pkg/api/grpc/utils"
+	shorturlgeneratorproto "github.com/FreibergVlad/url-shortener/proto/pkg/shorturls/generator/messages/v1"
+	shorturlgeneratorserviceproto "github.com/FreibergVlad/url-shortener/proto/pkg/shorturls/generator/service/v1"
+	grpcutils "github.com/FreibergVlad/url-shortener/shared/go/pkg/api/grpc/utils"
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/clock"
-	serviceErrors "github.com/FreibergVlad/url-shortener/shared/go/pkg/errors"
+	serviceerrors "github.com/FreibergVlad/url-shortener/shared/go/pkg/errors"
 	"github.com/FreibergVlad/url-shortener/short-url-management-service/internal/clients/domains"
 	"github.com/FreibergVlad/url-shortener/short-url-management-service/internal/config"
-	shortURLRepository "github.com/FreibergVlad/url-shortener/short-url-management-service/internal/db/repositories/shorturls"
+	shorturlrepository "github.com/FreibergVlad/url-shortener/short-url-management-service/internal/db/repositories/shorturls"
 	"github.com/FreibergVlad/url-shortener/short-url-management-service/internal/db/schema"
-	shortURLUtils "github.com/FreibergVlad/url-shortener/short-url-management-service/internal/services/shorturls"
+	shorturlutils "github.com/FreibergVlad/url-shortener/short-url-management-service/internal/services/shorturls"
 	"github.com/FreibergVlad/url-shortener/short-url-management-service/internal/validators"
 )
 
@@ -31,11 +31,16 @@ type UserInfoGetter interface {
 	GetUserInfo(ctx context.Context, userID string) (schema.User, error)
 }
 
-var ErrShortURLCollisionRetriesExceeded = errors.New("maximum retries exceeded while handling collisions of short URL")
+var (
+	ErrShortURLCollisionRetriesExceeded = errors.New("maximum retries exceeded while handling collisions of short URL")
+	ErrDomainNotAllowed                 = serviceerrors.NewValidationError(
+		map[string][]string{"domain": {"domain is not allowed to use"}},
+	)
+)
 
 type ShortURLGeneratorService struct {
-	protoService.UnimplementedShortURLGeneratorServiceServer
-	shortURLRepository shortURLRepository.Repository
+	shorturlgeneratorserviceproto.UnimplementedShortURLGeneratorServiceServer
+	shortURLRepository shorturlrepository.Repository
 	domainChecker      DomainChecker
 	userInfoGetter     UserInfoGetter
 	generator          ShortURLAliasGenerator
@@ -44,7 +49,7 @@ type ShortURLGeneratorService struct {
 }
 
 func New(
-	shortURLRepository shortURLRepository.Repository,
+	shortURLRepository shorturlrepository.Repository,
 	domainChecker DomainChecker,
 	userInfoGetter UserInfoGetter,
 	generator ShortURLAliasGenerator,
@@ -62,22 +67,22 @@ func New(
 }
 
 func (s *ShortURLGeneratorService) CreateShortURL(
-	ctx context.Context, req *protoMessages.CreateShortURLRequest,
-) (*protoMessages.CreateShortURLResponse, error) {
+	ctx context.Context, req *shorturlgeneratorproto.CreateShortURLRequest,
+) (*shorturlgeneratorproto.CreateShortURLResponse, error) {
 	if err := validators.ValidateURL(req.LongUrl); err != nil {
-		return nil, serviceErrors.NewValidationError(map[string][]string{"long_url": {err.Error()}})
+		return nil, serviceerrors.NewValidationError(map[string][]string{"long_url": {err.Error()}})
 	}
 
-	user, err := s.userInfoGetter.GetUserInfo(ctx, grpcUtils.UserIDFromIncomingContext(ctx))
+	user, err := s.userInfoGetter.GetUserInfo(ctx, grpcutils.UserIDFromIncomingContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("error getting user info: %w", err)
 	}
 
-	draftShortURL := shortURLUtils.ShortURLFromRequest(req, s.clock, s.config.ShortURLScheme, user)
+	draftShortURL := shorturlutils.ShortURLFromRequest(req, s.clock, s.config.ShortURLScheme, user)
 
 	if err = s.domainChecker.HasDomain(ctx, user.ID, draftShortURL.OrganizationID, draftShortURL.Domain); err != nil {
 		if errors.Is(err, domains.ErrDomainNotAllowed) {
-			return nil, serviceErrors.NewValidationError(map[string][]string{"domain": {err.Error()}})
+			return nil, ErrDomainNotAllowed
 		}
 		return nil, fmt.Errorf("error validating short url domain: %w", err)
 	}
@@ -85,31 +90,31 @@ func (s *ShortURLGeneratorService) CreateShortURL(
 	var shorturl *schema.ShortURL
 	if customAlias := req.GetAlias().GetValue(); customAlias != "" {
 		draftShortURL.Alias = customAlias
-		shorturl, err = s.createWithCustomAlias(ctx, draftShortURL)
+		shorturl, err = s.СreateWithCustomAlias(ctx, draftShortURL)
 	} else {
-		shorturl, err = s.createWithGeneratedAlias(ctx, draftShortURL)
+		shorturl, err = s.CreateWithGeneratedAlias(ctx, draftShortURL)
 	}
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &protoMessages.CreateShortURLResponse{ShortUrl: shortURLUtils.ShortURLToResponse(shorturl)}, nil
+	return &shorturlgeneratorproto.CreateShortURLResponse{ShortUrl: shorturlutils.ShortURLToResponse(shorturl)}, nil
 }
 
-func (s *ShortURLGeneratorService) createWithCustomAlias(
+func (s *ShortURLGeneratorService) СreateWithCustomAlias(
 	ctx context.Context, shorturl *schema.ShortURL,
 ) (*schema.ShortURL, error) {
 	if err := s.shortURLRepository.Create(ctx, shorturl); err != nil {
-		if errors.Is(err, shortURLRepository.ErrAlreadyExists) {
-			return nil, serviceErrors.ErrShortURLAlreadyExists
+		if errors.Is(err, shorturlrepository.ErrAlreadyExists) {
+			return nil, serviceerrors.ErrShortURLAlreadyExists
 		}
 		return nil, fmt.Errorf("error creating short url with custom alias: %w", err)
 	}
 	return shorturl, nil
 }
 
-func (s *ShortURLGeneratorService) createWithGeneratedAlias(
+func (s *ShortURLGeneratorService) CreateWithGeneratedAlias(
 	ctx context.Context, shorturl *schema.ShortURL,
 ) (*schema.ShortURL, error) {
 	alias, err := s.generator.Generate(shorturl)
@@ -121,7 +126,7 @@ func (s *ShortURLGeneratorService) createWithGeneratedAlias(
 	if err = s.shortURLRepository.Create(ctx, shorturl); err == nil {
 		return shorturl, nil
 	}
-	if !errors.Is(err, shortURLRepository.ErrAlreadyExists) {
+	if !errors.Is(err, shorturlrepository.ErrAlreadyExists) {
 		return nil, fmt.Errorf("error creating short url with generated alias: %w", err)
 	}
 
@@ -135,7 +140,7 @@ func (s *ShortURLGeneratorService) createWithGeneratedAlias(
 	}
 
 	if conflictingShortURL.OrganizationKey() == shorturl.OrganizationKey() {
-		return nil, serviceErrors.ErrShortURLAlreadyExists
+		return nil, serviceerrors.ErrShortURLAlreadyExists
 	}
 
 	return s.handleShortURLCollision(ctx, shorturl)
@@ -152,7 +157,7 @@ func (s *ShortURLGeneratorService) handleShortURLCollision(
 
 		shorturl.Alias = alias
 		if err = s.shortURLRepository.Create(ctx, shorturl); err != nil {
-			if errors.Is(err, shortURLRepository.ErrAlreadyExists) {
+			if errors.Is(err, shorturlrepository.ErrAlreadyExists) {
 				continue
 			}
 			return nil, fmt.Errorf("error creating short url during collision handling: %w", err)

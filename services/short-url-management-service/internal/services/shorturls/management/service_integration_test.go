@@ -160,7 +160,7 @@ func TestUpdateShortURLByOrganizationID_Integration(t *testing.T) {
 		Domain:         shorturl.Domain,
 		Alias:          shorturl.Alias,
 		ShortUrl: &shortURLManagementMessages.UpdateShortURLParams{
-			Alias:       wrapperspb.String(testUtils.RandomBase62StringInRange(4, 30)),
+			Alias:       wrapperspb.String(testUtils.RandomShortURLAlias()),
 			LongUrl:     gofakeit.URL(),
 			Description: "updated description",
 			ExpiresAt:   timestamppb.New(time.Now().Add(time.Hour)),
@@ -192,7 +192,7 @@ func TestUpdateShortURLByOrganizationIDWhenShortURLNotFound_Integration(t *testi
 	request := &shortURLManagementMessages.UpdateShortURLByOrganizationIDRequest{
 		OrganizationId: gofakeit.UUID(),
 		Domain:         gofakeit.DomainName(),
-		Alias:          testUtils.RandomBase62String(4),
+		Alias:          testUtils.RandomShortURLAlias(),
 		ShortUrl:       &shortURLManagementMessages.UpdateShortURLParams{Description: gofakeit.ProductDescription()},
 		UpdateMask:     &fieldmaskpb.FieldMask{Paths: []string{"description"}},
 	}
