@@ -13,7 +13,7 @@ service ShortURLGeneratorService {
   rpc CreateShortURL(shorturls.generator.messages.v1.CreateShortURLRequest) returns (shorturls.generator.messages.v1.CreateShortURLResponse) {
     option (permissions.messages.v1.required_permissions) = "short-url:create";
     option (google.api.http) = {
-      post: "/v1/short-urls"
+      post: "/v1/organizations/{organization_id}/short-urls"
       body: "*"
     };
   }

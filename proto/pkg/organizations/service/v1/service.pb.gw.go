@@ -65,6 +65,7 @@ func request_OrganizationService_ListMeOrganizationMemberships_0(ctx context.Con
 		protoReq messagesv1_1.ListMeOrganizationMembershipsRequest
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	msg, err := client.ListMeOrganizationMemberships(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }

@@ -65,6 +65,7 @@ func request_UserService_GetMe_0(ctx context.Context, marshaler runtime.Marshale
 		protoReq messagesv1_6.GetMeRequest
 		metadata runtime.ServerMetadata
 	)
+	io.Copy(io.Discard, req.Body)
 	msg, err := client.GetMe(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 }

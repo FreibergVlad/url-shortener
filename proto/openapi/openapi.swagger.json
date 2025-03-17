@@ -107,30 +107,7 @@
         ]
       }
     },
-    "/v1/short-urls": {
-      "post": {
-        "operationId": "CreateShortURL",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/CreateShortURLResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/CreateShortURLRequest"
-            }
-          }
-        ]
-      }
-    },
-    "/v1/short-urls/{organizationId}": {
+    "/v1/organizations/{organizationId}/short-urls": {
       "get": {
         "operationId": "ListShortURLByOrganizationID",
         "responses": {
@@ -163,9 +140,36 @@
             "format": "int32"
           }
         ]
+      },
+      "post": {
+        "operationId": "CreateShortURL",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/CreateShortURLResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CreateShortURLBody"
+            }
+          }
+        ]
       }
     },
-    "/v1/short-urls/{organizationId}/{domain}/{alias}": {
+    "/v1/organizations/{organizationId}/short-urls/{domain}/{alias}": {
       "get": {
         "operationId": "GetShortURLByOrganizationID",
         "responses": {
@@ -414,12 +418,9 @@
         }
       }
     },
-    "CreateShortURLRequest": {
+    "CreateShortURLBody": {
       "type": "object",
       "properties": {
-        "organizationId": {
-          "type": "string"
-        },
         "domain": {
           "type": "string"
         },

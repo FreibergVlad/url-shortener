@@ -40,9 +40,18 @@ func request_ShortURLGeneratorService_CreateShortURL_0(ctx context.Context, mars
 	var (
 		protoReq messagesv1_3.CreateShortURLRequest
 		metadata runtime.ServerMetadata
+		err      error
 	)
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	val, ok := pathParams["organization_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "organization_id")
+	}
+	protoReq.OrganizationId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "organization_id", err)
 	}
 	msg, err := client.CreateShortURL(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
@@ -52,9 +61,18 @@ func local_request_ShortURLGeneratorService_CreateShortURL_0(ctx context.Context
 	var (
 		protoReq messagesv1_3.CreateShortURLRequest
 		metadata runtime.ServerMetadata
+		err      error
 	)
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	val, ok := pathParams["organization_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "organization_id")
+	}
+	protoReq.OrganizationId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "organization_id", err)
 	}
 	msg, err := server.CreateShortURL(ctx, &protoReq)
 	return msg, metadata, err
@@ -72,7 +90,7 @@ func RegisterShortURLGeneratorServiceHandlerServer(ctx context.Context, mux *run
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/shorturls.generator.service.v1.ShortURLGeneratorService/CreateShortURL", runtime.WithHTTPPathPattern("/v1/short-urls"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/shorturls.generator.service.v1.ShortURLGeneratorService/CreateShortURL", runtime.WithHTTPPathPattern("/v1/organizations/{organization_id}/short-urls"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -130,7 +148,7 @@ func RegisterShortURLGeneratorServiceHandlerClient(ctx context.Context, mux *run
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/shorturls.generator.service.v1.ShortURLGeneratorService/CreateShortURL", runtime.WithHTTPPathPattern("/v1/short-urls"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/shorturls.generator.service.v1.ShortURLGeneratorService/CreateShortURL", runtime.WithHTTPPathPattern("/v1/organizations/{organization_id}/short-urls"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -147,7 +165,7 @@ func RegisterShortURLGeneratorServiceHandlerClient(ctx context.Context, mux *run
 }
 
 var (
-	pattern_ShortURLGeneratorService_CreateShortURL_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "short-urls"}, ""))
+	pattern_ShortURLGeneratorService_CreateShortURL_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "organizations", "organization_id", "short-urls"}, ""))
 )
 
 var (

@@ -23,21 +23,21 @@ service ShortURLManagementService {
   }
   rpc GetShortURLByOrganizationID(shorturls.management.messages.v1.GetShortURLByOrganizationIDRequest) returns (shorturls.management.messages.v1.GetShortURLByOrganizationIDResponse) {
     option (permissions.messages.v1.required_permissions) = "short-url:read";
-    option (google.api.http) = {get: "/v1/short-urls/{organization_id}/{domain}/{alias}"};
+    option (google.api.http) = {get: "/v1/organizations/{organization_id}/short-urls/{domain}/{alias}"};
   }
   rpc ListShortURLByOrganizationID(shorturls.management.messages.v1.ListShortURLByOrganizationIDRequest) returns (shorturls.management.messages.v1.ListShortURLByOrganizationIDResponse) {
     option (permissions.messages.v1.required_permissions) = "short-url:list";
-    option (google.api.http) = {get: "/v1/short-urls/{organization_id}"};
+    option (google.api.http) = {get: "/v1/organizations/{organization_id}/short-urls"};
   }
   rpc UpdateShortURLByOrganizationID(shorturls.management.messages.v1.UpdateShortURLByOrganizationIDRequest) returns (shorturls.management.messages.v1.UpdateShortURLByOrganizationIDResponse) {
     option (permissions.messages.v1.required_permissions) = "short-url:update";
     option (google.api.http) = {
-      patch: "/v1/short-urls/{organization_id}/{domain}/{alias}"
+      patch: "/v1/organizations/{organization_id}/short-urls/{domain}/{alias}"
       body: "short_url"
     };
   }
   rpc DeleteShortURLByOrganizationID(shorturls.management.messages.v1.DeleteShortURLByOrganizationIDRequest) returns (shorturls.management.messages.v1.DeleteShortURLByOrganizationIDResponse) {
     option (permissions.messages.v1.required_permissions) = "short-url:delete";
-    option (google.api.http) = {delete: "/v1/short-urls/{organization_id}/{domain}/{alias}"};
+    option (google.api.http) = {delete: "/v1/organizations/{organization_id}/short-urls/{domain}/{alias}"};
   }
 }

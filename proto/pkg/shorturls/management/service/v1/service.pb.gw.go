@@ -42,6 +42,7 @@ func request_ShortURLManagementService_GetShortURLByOrganizationID_0(ctx context
 		metadata runtime.ServerMetadata
 		err      error
 	)
+	io.Copy(io.Discard, req.Body)
 	val, ok := pathParams["organization_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "organization_id")
@@ -112,6 +113,7 @@ func request_ShortURLManagementService_ListShortURLByOrganizationID_0(ctx contex
 		metadata runtime.ServerMetadata
 		err      error
 	)
+	io.Copy(io.Discard, req.Body)
 	val, ok := pathParams["organization_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "organization_id")
@@ -270,6 +272,7 @@ func request_ShortURLManagementService_DeleteShortURLByOrganizationID_0(ctx cont
 		metadata runtime.ServerMetadata
 		err      error
 	)
+	io.Copy(io.Discard, req.Body)
 	val, ok := pathParams["organization_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "organization_id")
@@ -344,7 +347,7 @@ func RegisterShortURLManagementServiceHandlerServer(ctx context.Context, mux *ru
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/shorturls.management.service.v1.ShortURLManagementService/GetShortURLByOrganizationID", runtime.WithHTTPPathPattern("/v1/short-urls/{organization_id}/{domain}/{alias}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/shorturls.management.service.v1.ShortURLManagementService/GetShortURLByOrganizationID", runtime.WithHTTPPathPattern("/v1/organizations/{organization_id}/short-urls/{domain}/{alias}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -364,7 +367,7 @@ func RegisterShortURLManagementServiceHandlerServer(ctx context.Context, mux *ru
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/shorturls.management.service.v1.ShortURLManagementService/ListShortURLByOrganizationID", runtime.WithHTTPPathPattern("/v1/short-urls/{organization_id}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/shorturls.management.service.v1.ShortURLManagementService/ListShortURLByOrganizationID", runtime.WithHTTPPathPattern("/v1/organizations/{organization_id}/short-urls"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -384,7 +387,7 @@ func RegisterShortURLManagementServiceHandlerServer(ctx context.Context, mux *ru
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/shorturls.management.service.v1.ShortURLManagementService/UpdateShortURLByOrganizationID", runtime.WithHTTPPathPattern("/v1/short-urls/{organization_id}/{domain}/{alias}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/shorturls.management.service.v1.ShortURLManagementService/UpdateShortURLByOrganizationID", runtime.WithHTTPPathPattern("/v1/organizations/{organization_id}/short-urls/{domain}/{alias}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -404,7 +407,7 @@ func RegisterShortURLManagementServiceHandlerServer(ctx context.Context, mux *ru
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/shorturls.management.service.v1.ShortURLManagementService/DeleteShortURLByOrganizationID", runtime.WithHTTPPathPattern("/v1/short-urls/{organization_id}/{domain}/{alias}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/shorturls.management.service.v1.ShortURLManagementService/DeleteShortURLByOrganizationID", runtime.WithHTTPPathPattern("/v1/organizations/{organization_id}/short-urls/{domain}/{alias}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -462,7 +465,7 @@ func RegisterShortURLManagementServiceHandlerClient(ctx context.Context, mux *ru
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/shorturls.management.service.v1.ShortURLManagementService/GetShortURLByOrganizationID", runtime.WithHTTPPathPattern("/v1/short-urls/{organization_id}/{domain}/{alias}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/shorturls.management.service.v1.ShortURLManagementService/GetShortURLByOrganizationID", runtime.WithHTTPPathPattern("/v1/organizations/{organization_id}/short-urls/{domain}/{alias}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -479,7 +482,7 @@ func RegisterShortURLManagementServiceHandlerClient(ctx context.Context, mux *ru
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/shorturls.management.service.v1.ShortURLManagementService/ListShortURLByOrganizationID", runtime.WithHTTPPathPattern("/v1/short-urls/{organization_id}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/shorturls.management.service.v1.ShortURLManagementService/ListShortURLByOrganizationID", runtime.WithHTTPPathPattern("/v1/organizations/{organization_id}/short-urls"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -496,7 +499,7 @@ func RegisterShortURLManagementServiceHandlerClient(ctx context.Context, mux *ru
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/shorturls.management.service.v1.ShortURLManagementService/UpdateShortURLByOrganizationID", runtime.WithHTTPPathPattern("/v1/short-urls/{organization_id}/{domain}/{alias}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/shorturls.management.service.v1.ShortURLManagementService/UpdateShortURLByOrganizationID", runtime.WithHTTPPathPattern("/v1/organizations/{organization_id}/short-urls/{domain}/{alias}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -513,7 +516,7 @@ func RegisterShortURLManagementServiceHandlerClient(ctx context.Context, mux *ru
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/shorturls.management.service.v1.ShortURLManagementService/DeleteShortURLByOrganizationID", runtime.WithHTTPPathPattern("/v1/short-urls/{organization_id}/{domain}/{alias}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/shorturls.management.service.v1.ShortURLManagementService/DeleteShortURLByOrganizationID", runtime.WithHTTPPathPattern("/v1/organizations/{organization_id}/short-urls/{domain}/{alias}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -530,10 +533,10 @@ func RegisterShortURLManagementServiceHandlerClient(ctx context.Context, mux *ru
 }
 
 var (
-	pattern_ShortURLManagementService_GetShortURLByOrganizationID_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "short-urls", "organization_id", "domain", "alias"}, ""))
-	pattern_ShortURLManagementService_ListShortURLByOrganizationID_0   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "short-urls", "organization_id"}, ""))
-	pattern_ShortURLManagementService_UpdateShortURLByOrganizationID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "short-urls", "organization_id", "domain", "alias"}, ""))
-	pattern_ShortURLManagementService_DeleteShortURLByOrganizationID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "short-urls", "organization_id", "domain", "alias"}, ""))
+	pattern_ShortURLManagementService_GetShortURLByOrganizationID_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 1, 0, 4, 1, 5, 5}, []string{"v1", "organizations", "organization_id", "short-urls", "domain", "alias"}, ""))
+	pattern_ShortURLManagementService_ListShortURLByOrganizationID_0   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "organizations", "organization_id", "short-urls"}, ""))
+	pattern_ShortURLManagementService_UpdateShortURLByOrganizationID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 1, 0, 4, 1, 5, 5}, []string{"v1", "organizations", "organization_id", "short-urls", "domain", "alias"}, ""))
+	pattern_ShortURLManagementService_DeleteShortURLByOrganizationID_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 1, 0, 4, 1, 5, 5}, []string{"v1", "organizations", "organization_id", "short-urls", "domain", "alias"}, ""))
 )
 
 var (
