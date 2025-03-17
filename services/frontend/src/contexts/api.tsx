@@ -48,7 +48,7 @@ function APIProvider({ children } : {children: React.ReactNode}) {
                 });
                 return response.user;
             },
-            queryKey: ["users.me"],
+            queryKey: ["users", "me"],
             enabled: !!accessToken,
             retry: false,
         });
@@ -64,7 +64,7 @@ function APIProvider({ children } : {children: React.ReactNode}) {
                 });
                 return response.data;
             },
-            queryKey: ["users.me.organizations"],
+            queryKey: ["users", "me", "organizations"],
             enabled: !!accessToken,
             retry: false,
         });
@@ -80,7 +80,7 @@ function APIProvider({ children } : {children: React.ReactNode}) {
         });
       },
       onSuccess: async () => {
-        await queryClient.invalidateQueries({queryKey: ["users.me.organizations"]});
+        await queryClient.invalidateQueries({queryKey: ["users", "me", "organizations"]});
       }
     });
 
