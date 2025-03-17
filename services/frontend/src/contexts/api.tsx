@@ -14,6 +14,8 @@ interface APIContextType {
 
 const APIContext = createContext<APIContextType | null>(null);
 
+let ongoingRefreshTokenRequest: Promise<string> | null = null;
+
 function APIProvider({ children } : {children: React.ReactNode}) {
     const {accessToken, refreshUserAuthentication} = useAuthContext();
     const queryClient = useQueryClient()
@@ -21,8 +23,18 @@ function APIProvider({ children } : {children: React.ReactNode}) {
     const baseRequestParams = {
         accessToken: accessToken,
         onTokenExpired: async () => {
-            const response = await refreshUserAuthentication.mutateAsync(undefined);
-            return response.token;
+            if (ongoingRefreshTokenRequest) {
+                return ongoingRefreshTokenRequest;
+            }
+            ongoingRefreshTokenRequest = (async () => {
+                try {
+                    const response = await refreshUserAuthentication.mutateAsync(undefined);
+                    return response.token;
+                } finally {
+                    ongoingRefreshTokenRequest = null;
+                }
+            })();
+            return ongoingRefreshTokenRequest;
         }
     };
 
