@@ -5,22 +5,26 @@ interface APIRequestConfig<RequestT> {
     endpoint: string
     method: string
     body?: RequestT
+    queryParams?: Record<string, string>
     accessToken?: string
     onTokenExpired?: (() => Promise<string>)
 }
 
 export async function executeAPIRequest<RequestT, ResponseT>(request: APIRequestConfig<RequestT>): Promise<ResponseT> {
     const execute = async (token: string | undefined): Promise<Response> => {
+        let url = `${API_BASE_URL}/${request.endpoint}`;
+        if (request.queryParams) {
+            url += `?${new URLSearchParams(request.queryParams)}`;
+        }
+        const body = request.body ? JSON.stringify(request.body) : null;
+        const headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            ...(token ? {"Authorization": `Bearer ${token}`} : {} ),
+        };
+
         try {
-            return await fetch(`${API_BASE_URL}/${request.endpoint}`, {
-                method: request.method,
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    ...(token ? {"Authorization": `Bearer ${token}`} : {} ),
-                },
-                body: request ? JSON.stringify(request.body) : null,
-            });
+            return await fetch(url, {method: request.method, headers, body});
         } catch (e: unknown) {
             throw networkAPIError(ensureAPIError(e).message);
         }
