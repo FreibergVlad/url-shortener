@@ -5,6 +5,11 @@ export interface User {
     lastName: string;
 }
 
+export interface ShortUser {
+    id: string;
+    email: string;
+}
+
 export interface GetMeResponse {
     user: User;
 }
