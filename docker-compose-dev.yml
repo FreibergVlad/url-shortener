@@ -107,7 +107,7 @@ services:
       - JWT_LIFETIME_SECONDS=300
       - JWT_REFRESH_LIFETIME_SECONDS=86400
       - REDIS_DSN=redis://:root@redis-cache:6379/0
-      - POSTGRES_DSN=postgresql://root:root@postgres:5432/auth-service
+      - POSTGRES_DSN=postgresql://postgres:postgres@postgres:5432/auth-service
       - ADMIN_EMAIL=fake-admin@email.com
       - ADMIN_PASSWORD=123
     depends_on:
@@ -121,7 +121,7 @@ services:
     container_name: auth-service-migrations
     environment:
       - LOG_LEVEL=info
-      - MIGRATION_POSTGRES_DSN=pgx5://root:root@postgres:5432/auth-service
+      - MIGRATION_POSTGRES_DSN=pgx5://postgres:postgres@postgres:5432/auth-service
     depends_on:
       postgres:
         condition: service_healthy
@@ -189,8 +189,8 @@ services:
     container_name: postgres
     restart: always
     environment:
-      - POSTGRES_USER=root
-      - POSTGRES_PASSWORD=root
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=auth-service
     ports:
       - 5432:5432
