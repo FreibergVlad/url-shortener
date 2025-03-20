@@ -1,19 +1,10 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import Login from "./pages/login";
-import CreateAccount from "./pages/create-account";
-import Loader from "./components/loader";
-import { useUserContext } from "./contexts/user";
-import CreateOrganization from "./pages/create-organization";
-import Dashboard from "./pages/dashboard";
+import Login from "@/pages/login";
+import CreateAccount from "@/pages/create-account";
+import CreateOrganization from "@/pages/create-organization";
+import Links from "@/pages/links";
 
-export default function App() {
-  const {user, organizationMemberships, isLoading} = useUserContext();
-
-  if (isLoading) {
-    return <Loader />;
-  }
-
-  if (!user) {
+export function UnauthenticatedRouter() {
     return (
       <BrowserRouter>
         <Routes>
@@ -23,9 +14,9 @@ export default function App() {
         </Routes>
       </BrowserRouter>
     );
-  }
+}
 
-  if (!organizationMemberships || !organizationMemberships.length) {
+export function AuthenticatedWithoutOrganizationRouter() {
     return (
       <BrowserRouter>
         <Routes>
@@ -34,14 +25,15 @@ export default function App() {
         </Routes>
       </BrowserRouter>
     );
-  }
+}
 
+export function AuthenticatedWithOrganizationRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/links" element={<Links />} />
         <Route path="/organizations/create" element={<CreateOrganization />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/links" replace />} />
       </Routes>
     </BrowserRouter>
   );
