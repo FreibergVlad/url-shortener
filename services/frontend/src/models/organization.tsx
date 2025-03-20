@@ -1,33 +1,31 @@
-import { Role } from "./auth";
+import { Role } from './auth'
 
 export interface ShortOrganization {
-    id: string;
-    slug: string;
+  id: string
+  slug: string
 }
 
 export interface Organization {
-    id: string;
-    name: string;
-    slug: string;
+  id: string
+  name: string
+  slug: string
 }
 
 export interface OrganizationMembership {
-    organization: ShortOrganization
-    role: Role
-    createdAt: string;
+  organization: ShortOrganization
+  role: Role
+  createdAt: string
 }
 
 export interface GetOrganizationMembershipsResponse {
-    data: Array<OrganizationMembership>;
+  data: OrganizationMembership[]
 }
 
 export interface CreateOrganizationRequest {
-    name: string;
-    slug: string;
+  name: string
+  slug: string
 }
 
 export interface CreateOrganizationResponse {
-    organization: Organization;
+  organization: Organization
 }
-
-

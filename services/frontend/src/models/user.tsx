@@ -1,24 +1,24 @@
 export interface User {
-    id: string;
-    email: string;
-    firstName: string;
-    lastName: string;
+  id: string
+  email: string
+  firstName: string
+  lastName: string
 }
 
 export interface ShortUser {
-    id: string;
-    email: string;
+  id: string
+  email: string
 }
 
 export interface GetMeResponse {
-    user: User;
+  user: User
 }
 
 export interface CreateUserRequest {
-    email: string;
-    password: string;
+  email: string
+  password: string
 }
 
 export interface CreateUserResponse {
-    user: User;
+  user: User
 }
