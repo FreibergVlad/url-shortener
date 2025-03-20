@@ -1,21 +1,21 @@
-import Loader from "@/components/loader";
-import { useUserContext } from "@/contexts/user";
-import { AuthenticatedWithOrganizationRouter, AuthenticatedWithoutOrganizationRouter, UnauthenticatedRouter } from "@/routers";
+import Loader from '@/components/loader'
+import { useUserContext } from '@/contexts/user'
+import { AuthenticatedWithOrganizationRouter, AuthenticatedWithoutOrganizationRouter, UnauthenticatedRouter } from '@/routers'
 
 export default function App() {
-  const {user, organizationMemberships, isLoading} = useUserContext();
+  const { user, organizationMemberships, isLoading } = useUserContext()
 
   if (isLoading) {
-    return <Loader />;
+    return <Loader />
   }
 
   if (!user) {
-    return <UnauthenticatedRouter />;
+    return <UnauthenticatedRouter />
   }
 
   if (!organizationMemberships?.length) {
-    return <AuthenticatedWithoutOrganizationRouter />;
+    return <AuthenticatedWithoutOrganizationRouter />
   }
 
-  return <AuthenticatedWithOrganizationRouter />;
+  return <AuthenticatedWithOrganizationRouter />
 }
