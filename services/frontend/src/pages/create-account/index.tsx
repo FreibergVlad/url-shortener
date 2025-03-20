@@ -43,8 +43,13 @@ export default function CreateAccount({className, ...props}: React.ComponentProp
     } catch (e: unknown) {
         const error = ensureAPIError(e);
         if (error.reason === APIErrorReason.BAD_REQUEST) {
-            setEmailError(error.friendlyMessage);
-            setPasswordError(error.friendlyMessage);
+            for (const detail of error.details) {
+                if (detail.field === "email") {
+                    setEmailError(detail.description);
+                } else if (detail.field === "password") {
+                    setPasswordError(detail.description);
+                }
+            }
         } else if (error.reason === APIErrorReason.ALREADY_EXISTS) {
             setEmailError(EMAIL_ALREADY_EXISTS);
         } else {

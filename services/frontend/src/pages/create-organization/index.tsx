@@ -40,8 +40,13 @@ export default function CreateOrganization({className, ...props}: React.Componen
     } catch (e: unknown) {
         const error = ensureAPIError(e);
         if (error.reason === APIErrorReason.BAD_REQUEST) {
-            setNameError(error.friendlyMessage);
-            setSlugError(error.friendlyMessage);
+            for (const detail of error.details) {
+                if (detail.field === "name") {
+                    setNameError(detail.description);
+                } else if (detail.field === "slug") {
+                    setSlugError(detail.description);
+                }
+            }
         } else if (error.reason === APIErrorReason.ALREADY_EXISTS) {
             setSlugError(ORGANIZATION_ALREADY_EXISTS);
         } else {

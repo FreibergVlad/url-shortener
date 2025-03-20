@@ -23,20 +23,27 @@ interface APIErrorParams {
     reason: APIErrorReason
     message: string
     friendlyMessage: string
-    details?: Record<string, string>
+    details?: Array<any>
+}
+
+interface FieldViolation {
+    description: string
+    field: string
+    localizedMessage: string
+    reason: string
 }
 
 export class APIError extends Error {
     friendlyMessage: string;
     reason: APIErrorReason;
-    details?: Record<string, string>
+    details: Array<any>
 
     constructor({reason, message, friendlyMessage, details}: APIErrorParams) {
         super(message);
         this.name = "APIError";
         this.friendlyMessage = friendlyMessage;
         this.reason = reason;
-        this.details = details;
+        this.details = details || [];
     }
 }
 
@@ -82,6 +89,10 @@ export async function unmarshallAPIError(response: Response): Promise<APIError> 
             error.friendlyMessage = FriendlyErrorMessage[error.reason]
             break;
         case "type.googleapis.com/google.rpc.BadRequest":
+            const fieldViolations = detail.fieldViolations as Array<FieldViolation>;
+            for (const fieldViolation of fieldViolations) {
+                error.details.push(fieldViolation)
+            }
             break;
         }
     });
