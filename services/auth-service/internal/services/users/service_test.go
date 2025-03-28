@@ -38,6 +38,7 @@ func TestCreateUser(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, request.Email, response.User.Email)
+	assert.Equal(t, request.FullName, response.User.FullName)
 	assert.Equal(t, timestamppb.New(fixedTime), response.User.CreatedAt)
 	assert.Equal(t, roles.RoleProvisional.ID, response.User.Role.Id)
 	assert.Equal(t, roles.RoleProvisional.Description, response.User.Role.Description)
@@ -89,7 +90,7 @@ func TestGetMe(t *testing.T) {
 
 	userRepo := testUtils.MockedUserRepository{}
 	userService := users.New(&userRepo, clock.NewFixedClock(time.Now()))
-	user := schema.User{ID: gofakeit.UUID(), Email: gofakeit.Email()}
+	user := schema.User{ID: gofakeit.UUID(), Email: gofakeit.Email(), FullName: gofakeit.Name()}
 	ctx := grpcUtils.IncomingContextWithUserID(context.Background(), user.ID)
 
 	userRepo.On("GetByID", ctx, user.ID).Return(&user, nil)
@@ -100,6 +101,7 @@ func TestGetMe(t *testing.T) {
 
 	assert.Equal(t, user.ID, response.User.Id)
 	assert.Equal(t, user.Email, response.User.Email)
+	assert.Equal(t, user.FullName, response.User.FullName)
 
 	userRepo.AssertExpectations(t)
 }

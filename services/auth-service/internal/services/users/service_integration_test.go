@@ -31,6 +31,7 @@ func TestCreateUser_Integration(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, request.Email, response.User.Email)
+	assert.Equal(t, request.FullName, response.User.FullName)
 	assert.Equal(t, roles.RoleIDProvisional, response.User.Role.Id)
 	assert.Equal(t, roles.RoleProvisional.Description, response.User.Role.Description)
 }
@@ -109,6 +110,7 @@ func TestGetMe_Integration(t *testing.T) {
 
 	assert.Equal(t, user.Id, getMeResponse.User.Id)
 	assert.Equal(t, user.Email, getMeResponse.User.Email)
+	assert.Equal(t, user.FullName, getMeResponse.User.FullName)
 	assert.Equal(t, user.Role.Id, getMeResponse.User.Role.Id)
 	assert.Equal(t, user.Role.Description, getMeResponse.User.Role.Description)
 }

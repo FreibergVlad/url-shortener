@@ -20,6 +20,7 @@ const fakePasswordLength = 10
 func CreateTestUserRequest() *userServiceMessages.CreateUserRequest {
 	return &userServiceMessages.CreateUserRequest{
 		Email:    gofakeit.Email(),
+		FullName: gofakeit.Name(),
 		Password: gofakeit.Password(true, true, true, true, true, fakePasswordLength),
 	}
 }
@@ -61,6 +62,7 @@ func CreateTestUser(t *testing.T, server *Server) *userServiceMessages.User {
 	require.NoError(t, err)
 
 	assert.Equal(t, request.Email, response.User.Email)
+	assert.Equal(t, request.FullName, response.User.FullName)
 	assert.Equal(t, roles.RoleIDProvisional, response.User.Role.Id)
 	assert.Equal(t, roles.RoleProvisional.Description, response.User.Role.Description)
 

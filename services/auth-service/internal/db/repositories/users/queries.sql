@@ -3,8 +3,7 @@ INSERT INTO users (
     id,
     password_hash,
     email,
-    first_name,
-    last_name,
+    full_name,
     role_id,
     created_at
 
@@ -14,8 +13,7 @@ INSERT INTO users (
     $3,
     $4,
     $5,
-    $6,
-    $7
+    $6
 );
 
 -- name: GetUserById :one

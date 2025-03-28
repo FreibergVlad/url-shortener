@@ -460,6 +460,9 @@
         "email": {
           "type": "string"
         },
+        "fullName": {
+          "type": "string"
+        },
         "password": {
           "type": "string"
         }
@@ -824,10 +827,7 @@
         "email": {
           "type": "string"
         },
-        "firstName": {
-          "type": "string"
-        },
-        "lastName": {
+        "fullName": {
           "type": "string"
         },
         "role": {

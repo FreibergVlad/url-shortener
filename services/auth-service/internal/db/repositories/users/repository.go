@@ -29,8 +29,7 @@ func (r *PostgresRepository) Create(ctx context.Context, user *schema.User) erro
 		ID:           repositories.MustPgUUIDFromString(user.ID),
 		PasswordHash: user.PasswordHash,
 		Email:        user.Email,
-		FirstName:    user.FirstName,
-		LastName:     user.LastName,
+		FullName:     user.FullName,
 		RoleID:       user.RoleID,
 		CreatedAt:    repositories.MustPgTimestamptzFromTime(user.CreatedAt),
 	}
@@ -65,8 +64,7 @@ func (r *PostgresRepository) userFromRow(user gen.User) *schema.User {
 		ID:           repositories.MustPgUUIDToString(user.ID),
 		PasswordHash: user.PasswordHash,
 		Email:        user.Email,
-		FirstName:    user.FirstName,
-		LastName:     user.LastName,
+		FullName:     user.FullName,
 		RoleID:       user.RoleID,
 		CreatedAt:    user.CreatedAt.Time,
 	}

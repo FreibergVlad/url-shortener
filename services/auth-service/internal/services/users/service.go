@@ -42,6 +42,7 @@ func (s *UserService) CreateUser(
 	user := schema.User{
 		ID:           uuid.NewString(),
 		Email:        req.Email,
+		FullName:     req.FullName,
 		PasswordHash: string(passHash),
 		RoleID:       roles.RoleIDProvisional,
 		CreatedAt:    s.clock.Now(),
@@ -76,8 +77,7 @@ func userToProto(user *schema.User) *protoMessages.User {
 	return &protoMessages.User{
 		Id:        user.ID,
 		Email:     user.Email,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
+		FullName:  user.FullName,
 		Role:      roles.GetRoleProto(user.RoleID),
 		CreatedAt: timestamppb.New(user.CreatedAt),
 	}
