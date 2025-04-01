@@ -1,8 +1,7 @@
 export interface User {
   id: string
   email: string
-  firstName: string
-  lastName: string
+  fullName: string
 }
 
 export interface ShortUser {
@@ -17,6 +16,7 @@ export interface GetMeResponse {
 export interface CreateUserRequest {
   email: string
   password: string
+  fullName: string
 }
 
 export interface CreateUserResponse {

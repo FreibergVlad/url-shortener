@@ -16,6 +16,7 @@ export default function CreateAccount({ className, ...props }: React.ComponentPr
   const { createUser, authenticateUser } = useAuthContext()
 
   const [email, setEmail] = useState<string>('')
+  const [fullName, setFullName] = useState<string>('')
   const [password, setPassword] = useState<string>('')
 
   const [emailError, setEmailError] = useState<string | null>(null)
@@ -30,14 +31,9 @@ export default function CreateAccount({ className, ...props }: React.ComponentPr
     setPasswordError(null)
     setGeneralError(null)
 
-    if (!email.trim() || !password.trim()) {
-      return
-    }
-    const credentials = { email: email.trim(), password: password.trim() }
-
     try {
-      await createUser.mutateAsync(credentials)
-      await authenticateUser.mutateAsync(credentials)
+      await createUser.mutateAsync({ email, password, fullName })
+      await authenticateUser.mutateAsync({ email, password })
 
       await navigate('/')
     }
@@ -83,19 +79,27 @@ export default function CreateAccount({ className, ...props }: React.ComponentPr
                       type="email"
                       placeholder="m@example.com"
                       required
-                      onChange={(e) => { setEmail(e.target.value) }}
+                      onChange={(e) => { setEmail(e.target.value.trim()) }}
                     />
                     {emailError && <p className="text-red-500 text-sm text-left">{emailError}</p>}
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="password">
-                      Password
-                    </Label>
+                    <Label htmlFor="fullName">Full Name</Label>
+                    <Input
+                      id="fullName"
+                      type="text"
+                      placeholder="John Doe"
+                      required
+                      onChange={(e) => { setFullName(e.target.value.trim()) }}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="password">Password</Label>
                     <Input
                       id="password"
                       type="password"
                       required
-                      onChange={(e) => { setPassword(e.target.value) }}
+                      onChange={(e) => { setPassword(e.target.value.trim()) }}
                     />
                     {passwordError && <p className="text-red-500 text-sm text-left">{passwordError}</p>}
                   </div>
