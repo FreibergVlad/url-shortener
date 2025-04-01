@@ -14,7 +14,7 @@ interface AuthContextType {
   createUser: UseMutationResult<CreateUserResponse, AppError, CreateUserRequest>
   authenticateUser: UseMutationResult<IssueAuthenticationTokenResponse, AppError, IssueAuthenticationTokenRequest>
   refreshUserAuthentication: UseMutationResult<RefreshAuthenticationTokenResponse, AppError, undefined>
-  logout(): void
+  logout: () => void
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null)

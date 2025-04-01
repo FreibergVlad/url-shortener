@@ -5,6 +5,10 @@ import { createContext, useContext } from 'react'
 interface UserContextType {
   user: User | undefined
   organizationMemberships: OrganizationMembership[] | undefined
+
+  currentOrganizationMembership: OrganizationMembership | undefined
+  setCurrentOrganizationMembership: (organizationMembership: OrganizationMembership) => void
+
   isLoading: boolean | undefined
 }
 
