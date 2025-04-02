@@ -17,5 +17,5 @@ type Item[T any] struct {
 type Cache[T any] interface {
 	Set(ctx context.Context, item *Item[T]) error
 	Get(ctx context.Context, key string) (*T, error)
-	Delete(ctx context.Context, key string) error
+	Delete(ctx context.Context, keys ...string) error
 }

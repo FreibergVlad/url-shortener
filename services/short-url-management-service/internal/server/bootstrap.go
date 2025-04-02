@@ -28,7 +28,6 @@ import (
 	"github.com/FreibergVlad/url-shortener/short-url-management-service/internal/services/shorturls/generator/encoders/base62"
 	sha256AliasGenerator "github.com/FreibergVlad/url-shortener/short-url-management-service/internal/services/shorturls/generator/generators/sha256"
 	shortURLManagementService "github.com/FreibergVlad/url-shortener/short-url-management-service/internal/services/shorturls/management"
-	"github.com/go-redis/cache/v9"
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog"
 	mongoDriver "go.mongodb.org/mongo-driver/v2/mongo"
@@ -52,7 +51,7 @@ func BootstrapShortURLGeneratorService(
 
 	redisOptions := must.Return(redis.ParseURL(config.Redis.DSN))
 	redisClient := redis.NewClient(redisOptions)
-	shortURLCache := redisCache.New[schema.ShortURL](&cache.Options{Redis: redisClient})
+	shortURLCache := redisCache.New[schema.ShortURL](redisClient)
 
 	shortURLCollection := client.Database(config.MongoDB.DBName).Collection("short_urls")
 	shortURLRepository := shorturls.NewMongoRepository(shortURLCollection)
@@ -108,7 +107,7 @@ func BootstrapShortURLManagementService(
 
 	redisOptions := must.Return(redis.ParseURL(config.Redis.DSN))
 	redisClient := redis.NewClient(redisOptions)
-	shortURLCache := redisCache.New[schema.ShortURL](&cache.Options{Redis: redisClient})
+	shortURLCache := redisCache.New[schema.ShortURL](redisClient)
 
 	shortURLCollection := client.Database(config.MongoDB.DBName).Collection("short_urls")
 	shortURLRepository := shorturls.NewMongoRepository(shortURLCollection)

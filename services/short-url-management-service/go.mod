@@ -6,7 +6,6 @@ require (
 	github.com/FreibergVlad/url-shortener/proto v0.0.0
 	github.com/FreibergVlad/url-shortener/shared/go v0.0.0
 	github.com/brianvoe/gofakeit/v7 v7.2.1
-	github.com/go-redis/cache/v9 v9.0.0
 	github.com/golang-migrate/migrate/v4 v4.18.2
 	github.com/redis/go-redis/v9 v9.7.1
 	github.com/rs/zerolog v1.33.0
@@ -43,9 +42,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stoewer/go-strcase v1.3.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
-	github.com/vmihailenco/go-tinylfu v0.2.2 // indirect
-	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
-	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.1.2 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect

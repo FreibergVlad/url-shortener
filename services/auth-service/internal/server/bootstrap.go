@@ -32,7 +32,6 @@ import (
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/clock"
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/must"
 	grpcServer "github.com/FreibergVlad/url-shortener/shared/go/pkg/server/grpc"
-	"github.com/go-redis/cache/v9"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
@@ -64,10 +63,9 @@ func Bootstrap(
 
 	redisOptions := must.Return(redis.ParseURL(config.Redis.DSN))
 	redisClient := redis.NewClient(redisOptions)
-	redisCacheOptions := &cache.Options{Redis: redisClient}
 
-	redisUserCache := redisCache.New[schema.User](redisCacheOptions)
-	redisOrganizationMembershipsCache := redisCache.New[schema.OrganizationMemberships](redisCacheOptions)
+	redisUserCache := redisCache.New[schema.User](redisClient)
+	redisOrganizationMembershipsCache := redisCache.New[schema.OrganizationMemberships](redisClient)
 
 	userRepository := users.NewRepository(postgresConnPool)
 	cachedUserRepository := users.NewCachedRepository(userRepository, redisUserCache, time.Hour)

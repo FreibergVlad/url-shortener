@@ -2,41 +2,46 @@ package redis
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/FreibergVlad/url-shortener/shared/go/pkg/cache"
-	redisCacheImpl "github.com/go-redis/cache/v9"
+	redisImpl "github.com/redis/go-redis/v9"
 )
 
 type Cache[T any] struct {
-	redis *redisCacheImpl.Cache
+	redis *redisImpl.Client
 }
 
-func New[T any](opts *redisCacheImpl.Options) *Cache[T] {
-	return &Cache[T]{redis: redisCacheImpl.New(opts)}
+func New[T any](client *redisImpl.Client) *Cache[T] {
+	return &Cache[T]{redis: client}
 }
 
 func (c *Cache[T]) Set(ctx context.Context, item *cache.Item[T]) error {
-	return c.redis.Set(&redisCacheImpl.Item{
-		Ctx:   ctx,
-		Key:   item.Key,
-		Value: item.Value,
-		TTL:   item.TTL,
-	})
+	value, err := json.Marshal(item.Value)
+	if err != nil {
+		return fmt.Errorf("redis: failed to marshal value: %w", err)
+	}
+	return c.redis.Set(ctx, item.Key, value, item.TTL).Err()
 }
 
 func (c *Cache[T]) Get(ctx context.Context, key string) (*T, error) {
-	var value T
-	err := c.redis.Get(ctx, key, &value)
-	if errors.Is(err, redisCacheImpl.ErrCacheMiss) {
+	rawValue, err := c.redis.Get(ctx, key).Result()
+	if errors.Is(err, redisImpl.Nil) {
 		return nil, cache.ErrCacheMiss
 	}
 	if err != nil {
 		return nil, err
 	}
+
+	var value T
+	if err = json.Unmarshal([]byte(rawValue), &value); err != nil {
+		return nil, fmt.Errorf("redis: failed to unmarshal value: %w", err)
+	}
 	return &value, err
 }
 
-func (c *Cache[T]) Delete(ctx context.Context, key string) error {
-	return c.redis.Delete(ctx, key)
+func (c *Cache[T]) Delete(ctx context.Context, keys ...string) error {
+	return c.redis.Del(ctx, keys...).Err()
 }
