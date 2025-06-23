@@ -10,6 +10,9 @@ includes:
   proto: ./proto
 
 tasks:
+  run:
+    cmds:
+      - docker-compose -f docker-compose-dev.yml up --build
   run-all-tests:
     cmds:
       - task auth-service:run-all-tests
